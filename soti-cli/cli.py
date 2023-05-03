@@ -1,30 +1,22 @@
+from pynput import keyboard
 import sys
 
-# well-known help messages for commands
-send_help = """
-Send a command to the satellite.
+from cli_utils import help_strings
 
-Arguments:
--c, --code......The code for the command to send (REQUIRED)
--t, --time......The time to send the command (OPTIONAL; defaults to current time)
-"""
+input_buffer = ""
 
-query_help = """
-Query the satellite for information.
+def get_history():
+	print("getting history")
 
-Available subcommands:
-charge........The charge state of the battery
-comq..........The status of the command queue
-pyld..........Science and ancillary data from the payload
-telem.........Current or saved telemetry sensor data
-"""
+def on_key_pressed(key):
+	print("Pressed key {}".format(key))
+	if key == keyboard.Key.up:
+		get_history()
 
-help_message = """
-Use \"-h\" with any command for specific help.
-send: sends a command to the board
-query: retrieves information from the board
-exit: exits the program
-"""
+def on_key_released(key):
+	print("Released key {}".format(key))
+	if key == keyboard.Key.enter:
+		print("return all input")
 
 def send_parse(args):
 	args_dict = {
@@ -48,26 +40,26 @@ def query_parse(args):
 # subroutines to handle each user command
 def send_command(args):
 	if not args:
-		print(send_help)
+		print(help_strings.send_help)
 		return
 
 	args_dict = send_parse(args)
 
 	if args_dict["help"]:
-		print(send_help)
+		print(help_strings.send_help)
 
 def query_command(args):
 	if not args:
-		print(query_help)
+		print(help_strings.query_help)
 		return
 
 	args_dict = query_parse(args)
 
 	if args_dict["help"]:
-		print(query_help)
+		print(help_strings.query_help)
 
 def help_command(*args):
-	print(help_message);
+	print(help_strings.help_message)
 
 def exit_command(*args):
 	print("Exiting...")
@@ -81,25 +73,33 @@ commands = {
 	"exit": exit_command
 }
 
-print("Welcome to the SOTI CLI!\nOne day I'll put some ASCII art here like in the demo.")
-print("Available commands:\nsend\nquery\nhelp\nexit")
-print("Use \"-h\"/\"-help\" with any command for specifics.");
+def main_loop():
+	while True:
+		# TODO use pynput to get input lines to not fuck with the arrowkeys
+		pass
 
-while True:
+
+		# args = None
+		# tokens_in = line_in.split(' ')
+		# comm = tokens_in[0]
+		# if len(tokens_in) > 1:
+		# 	args = tokens_in[1:]
+
+		# if comm in commands.keys():
+		# 	commands[comm](args)
+		# else:
+		# 	print("Command {} doesn't exist.\nUse \"help\" for a list of commands.".format(comm))
+
+if __name__ == '__main__':
+	listener = keyboard.Listener(on_press=on_key_pressed, on_release=on_key_released)
+	print("Welcome to the SOTI CLI!\nOne day I'll put some ASCII art here like in the demo.")
+	print("Available commands:\nsend\nquery\nhelp\nexit")
+	print("Use \"-h\"/\"-help\" with any command for specifics.")
+
+	listener.start()
 	try:
-		line_in = input("> ")
+		main_loop()
 
 	except KeyboardInterrupt:
 		print("\nExiting...")
 		sys.exit(0)
-
-	args = None
-	tokens_in = line_in.split(' ')
-	comm = tokens_in[0]
-	if len(tokens_in) > 1:
-		args = tokens_in[1:]
-
-	if comm in commands.keys():
-		commands[comm](args)
-	else:
-		print("Command {} doesn't exist.\nUse \"help\" for a list of commands.".format(comm))
