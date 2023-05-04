@@ -5,19 +5,6 @@ from cli_utils import help_strings
 
 input_buffer = ""
 
-def get_history():
-	print("getting history")
-
-def on_key_pressed(key):
-	print("Pressed key {}".format(key))
-	if key == keyboard.Key.up:
-		get_history()
-
-def on_key_released(key):
-	print("Released key {}".format(key))
-	if key == keyboard.Key.enter:
-		print("return all input")
-
 def send_parse(args):
 	args_dict = {
 		"help": ("-h" in args or "--help" in args),
@@ -73,30 +60,56 @@ commands = {
 	"exit": exit_command
 }
 
+def parse(input_buffer):
+	args = None
+	tokens_in = input_buffer.split(' ')
+	comm = tokens_in[0]
+	if len(tokens_in) > 1:
+		args = tokens_in[1:]
+
+	if comm in commands.keys():
+		commands[comm](args)
+	else:
+		print("Command {} doesn't exist.\nUse \"help\" for a list of commands.".format(comm))
+
+def get_history():
+	print("getting history")
+
+def on_key_pressed(key):
+	global input_buffer
+	# placeholders: this will be replaced with past command history
+	if key == keyboard.Key.up:
+		get_history()
+	elif key == keyboard.Key.down:
+		get_history()
+
+def on_key_released(key):
+	global input_buffer
+	if hasattr(key, "char"):
+		input_buffer += key.char
+	elif key == keyboard.Key.space:
+		input_buffer += " "
+	elif key == keyboard.Key.enter:
+		return False
+
 def main_loop():
+	global input_buffer
 	while True:
-		# TODO use pynput to get input lines to not fuck with the arrowkeys
-		pass
 
+		# TODO this causes some weird multithreading issues
+		keyboard.Controller().type("> ")
+		with keyboard.Listener(on_press=on_key_pressed, on_release=on_key_released) as listener:
+			listener.join()
 
-		# args = None
-		# tokens_in = line_in.split(' ')
-		# comm = tokens_in[0]
-		# if len(tokens_in) > 1:
-		# 	args = tokens_in[1:]
-
-		# if comm in commands.keys():
-		# 	commands[comm](args)
-		# else:
-		# 	print("Command {} doesn't exist.\nUse \"help\" for a list of commands.".format(comm))
+		parse(input_buffer)
+		input_buffer = ""
 
 if __name__ == '__main__':
-	listener = keyboard.Listener(on_press=on_key_pressed, on_release=on_key_released)
+
 	print("Welcome to the SOTI CLI!\nOne day I'll put some ASCII art here like in the demo.")
 	print("Available commands:\nsend\nquery\nhelp\nexit")
 	print("Use \"-h\"/\"-help\" with any command for specifics.")
 
-	listener.start()
 	try:
 		main_loop()
 
