@@ -36,6 +36,5 @@ int main()
         {
             wait(&new_pid);
         }
-
     }
 }

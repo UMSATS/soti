@@ -16,10 +16,16 @@ subparsers_group = parser.add_subparsers(dest="command", help=help_strings.help_
 
 send_subparser = subparsers_group.add_parser("send", help=help_strings.send_help)
 query_subparser = subparsers_group.add_parser("query", help=help_strings.query_help)
-query_subparser = subparsers_group.add_parser("help")
+help_subparser = subparsers_group.add_parser("help")
 
-send_subparser.add_argument("-c", dest="code")
-send_subparser.add_argument("-t")
+send_subparser.add_argument("-c", "--code", type=int, required=True)
+send_subparser.add_argument("-t", "--time", type=int, default=0)
+
+query_options = query_subparser.add_subparsers(dest="queriable", required=True)
+query_options.add_parser("charge")
+query_options.add_parser("comq")
+query_options.add_parser("pyld")
+query_options.add_parser("telem")
 
 args_fmtd = []
 for arg in sys.argv[1:]:
@@ -34,4 +40,6 @@ if command == "send":
 elif command == "query":
 	query_command(args)
 elif command == "help":
-	print(help_strings.query_help)
+	print(help_strings.help_message)
+
+print(args)
