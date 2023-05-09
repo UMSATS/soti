@@ -10,22 +10,18 @@ def query_command(args):
 def help_command():
 	print(help_strings.help_message)
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(prog="", add_help=False)
 
 subparsers_group = parser.add_subparsers(dest="command", help=help_strings.help_message)
 
-send_subparser = subparsers_group.add_parser("send", help=help_strings.send_help)
-query_subparser = subparsers_group.add_parser("query", help=help_strings.query_help)
+send_subparser = subparsers_group.add_parser("send", description="sends a command to the satellite")
+query_subparser = subparsers_group.add_parser("query", description="queries the satellite for information")
 help_subparser = subparsers_group.add_parser("help")
 
-send_subparser.add_argument("-c", "--code", type=int, required=True)
-send_subparser.add_argument("-t", "--time", type=int, default=0)
+send_subparser.add_argument("-c", "--code", type=int, required=True, help="the command code to send the satellite")
+send_subparser.add_argument("-t", "--time", type=int, default=0, help="how many minutes in the future to send the command")
 
-query_options = query_subparser.add_subparsers(dest="queriable", required=True)
-query_options.add_parser("charge")
-query_options.add_parser("comq")
-query_options.add_parser("pyld")
-query_options.add_parser("telem")
+query_subparser.add_argument("attribute", choices=["charge", "comq", "pyld", "telem"], help="the attribute to query the satellite for")
 
 args_fmtd = []
 for arg in sys.argv[1:]:
@@ -42,4 +38,5 @@ elif command == "query":
 elif command == "help":
 	print(help_strings.help_message)
 
+# for debugging
 print(args)
