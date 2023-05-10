@@ -1,4 +1,5 @@
 .vscode/
 soti-stm32project/.settings/
 soti-stm32project/Debug/
-
+__pycache__
+cli
