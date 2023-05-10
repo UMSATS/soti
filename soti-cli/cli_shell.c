@@ -9,7 +9,7 @@ int main()
 {
     printf("Welcome to the SOTI CLI!\nOne day I'll put some ASCII art here like in the demo.\n"
         "Available commands:\nsend\nquery\nhelp\nexit\n"
-        "Use \"-h\"/\"-help\" with any command for specifics.\n");
+        "Use \"-h\"/\"-help\" with any command for specifics.\n\n");
 
     char input[MAX_INPUT_SIZE];
 
