@@ -1,6 +1,7 @@
 #include "can_message_queue.h"
 
-#define CAN_QUEUE_SIZE 100
+#include <string.h>
+
 
 CANQueue_t can_queue;
 

@@ -19,6 +19,7 @@
 //###############################################################################################
 #include <stdio.h>
 #include "can.h"
+#include "can_message_queue.h"
 
 //###############################################################################################
 //Public Functions
@@ -31,7 +32,7 @@
  */
 HAL_StatusTypeDef CAN_Init(){
     HAL_StatusTypeDef operation_status;
-
+	CAN_Queue_Init();
 	CAN_FilterTypeDef sFilterConfig;
 	sFilterConfig.FilterIdHigh = 0x0000;
 	sFilterConfig.FilterIdLow = 0x0000;
@@ -95,6 +96,14 @@ HAL_StatusTypeDef CAN_Message_Received() {
 	if (operation_status != HAL_OK) goto error;
 
 	// TODO: add received message to queue
+	CANMessage_t message = {
+        .priority = rxMessage.RTR == CAN_RTR_REMOTE ? 0x7F : rxMessage.ExtId >> 24,
+        .DestinationID = rxMessage.ExtId & RECEIVED_DESTINATION_ID_MASK,
+        .command = rxData[0],
+        .data = { rxData[1], rxData[2], rxData[3], rxData[4], rxData[5], rxData[6], rxData[7] }
+    };
+	
+    CAN_Queue_Enqueue(&message);
 
 error:
 	return operation_status;

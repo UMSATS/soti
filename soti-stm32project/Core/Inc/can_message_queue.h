@@ -1,4 +1,8 @@
+#include <stdbool.h>
+
 #include "can.h"
+
+#define CAN_QUEUE_SIZE 100
 
 typedef struct {
     CANMessage_t data;
