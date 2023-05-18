@@ -1,4 +1,4 @@
-import argparse, sys
+import argparse, serial, sys
 from cli_utils import help_strings
 
 def send_command(args):
@@ -20,27 +20,49 @@ help_subparser = subparsers_group.add_parser("help", add_help=False)
 exit_subparser = subparsers_group.add_parser("exit", add_help=False)
 
 send_subparser.add_argument("-c", "--code", type=int, required=True, help="the command code to send the satellite")
-send_subparser.add_argument("-t", "--time", type=int, default=0, help="how many minutes in the future to send the command")
+send_subparser.add_argument("-t", "--time", type=int, default=0, help="the timestamp to send the command at")
 
 query_subparser.add_argument("attribute", choices=["charge", "comq", "pyld", "telem"], help="the attribute to query the satellite for")
 
-args_raw = []
-for arg in sys.argv[1:]:
-	for arg_sub in arg.split():
-		args_raw.append(arg_sub)
+# first script argument will be the device to read/write to
+port_arg = sys.argv[1]
 
-args = parser.parse_args(args_raw)
+# debug: provide an empty string and we create an unopened serial connection
+if not port_arg:
+	port_arg = None
 
-command = args.command
-if command == "send":
-	send_command(args)
-elif command == "query":
-	query_command(args)
-elif command == "help":
-	parser.print_help()
-# actually handled by the C shell, but we include it here for the facade of a CLI
-elif command == "exit":
-	pass
+# use a default read timeout of 1 second to avoid infinite blocking
+with serial.Serial(port_arg, baudrate=115200, timeout=1) as ser:
+	args_raw = []
+	for arg in sys.argv[2:]:
+		for arg_sub in arg.split():
+			args_raw.append(arg_sub)
 
-# for debugging
-print(args)
+	args = parser.parse_args(args_raw)
+	data_out = ""
+
+	command = args.command
+	if command == "send":
+		# write the appropriate command to the serial device
+		ser.write(args.code)
+
+		# record the response
+		data_out = ser.read()
+
+		send_command(args)
+	elif command == "query":
+		ser.write(args.attribute)
+		ser.read()
+		
+		query_command(args)
+	elif command == "help":
+		parser.print_help()
+	# actually handled by the C shell, but we include it here for the facade of a CLI
+	elif command == "exit":
+		pass
+
+	# for debugging
+	print(args)
+	print("Send to: ", ser.name)
+
+	ser.close()

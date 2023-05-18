@@ -7,11 +7,20 @@
 
 int main()
 {
-    printf("Welcome to the SOTI CLI!\nOne day I'll put some ASCII art here like in the demo.\n"
-        "Available commands:\nsend\nquery\nhelp\nexit\n"
-        "Use \"-h\"/\"-help\" with any command for specifics.\n\n");
+    printf("Welcome to the SOTI CLI!\nOne day I'll put some ASCII art here like in the demo.\n\n");
+
+    char recv_port[MAX_INPUT_SIZE];
+    printf("Enter the port to receive messages from:\n");
+    fgets(recv_port, MAX_INPUT_SIZE, stdin);
+    // trims the newline character from the inputted device
+    recv_port[strlen(recv_port) - 1] = '\0';
+
+    // TODO validate user-inputted device
 
     char input[MAX_INPUT_SIZE];
+
+    printf("\nAvailable commands:\nsend\nquery\nhelp\nexit\n"
+        "Use \"-h\"/\"-help\" with any command for specifics.\n\n");
 
     while(1)
     {
@@ -25,7 +34,7 @@ int main()
             exit(0);
         }
 
-        char* exec_args[] = {"python3", "cli.py", input, NULL};
+        char* exec_args[] = {"python3", "cli.py", recv_port, input, NULL};
         pid_t new_pid = fork();
         if(new_pid == 0)
         {
