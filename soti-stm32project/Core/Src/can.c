@@ -24,15 +24,18 @@
 //###############################################################################################
 //Public Functions
 //###############################################################################################
-
+CANQueue_t* CanQueue;
 /**
  * @brief Boots the CAN Bus
  * 
  * @return HAL_StatusTypeDef 
  */
 HAL_StatusTypeDef CAN_Init(){
+	//Initializing CAN Message Queue
+	
+	CAN_Queue_Init(CanQueue);
+
     HAL_StatusTypeDef operation_status;
-	CAN_Queue_Init();
 	CAN_FilterTypeDef sFilterConfig;
 	sFilterConfig.FilterIdHigh = 0x0000;
 	sFilterConfig.FilterIdLow = 0x0000;
@@ -103,7 +106,10 @@ HAL_StatusTypeDef CAN_Message_Received() {
         .data = { rxData[1], rxData[2], rxData[3], rxData[4], rxData[5], rxData[6], rxData[7] }
     };
 	
-    CAN_Queue_Enqueue(&message);
+    bool success = CAN_Queue_Enqueue(CanQueue, &message);
+
+	if(success) return HAL_OK;
+	else return HAL_ERROR;
 
 error:
 	return operation_status;

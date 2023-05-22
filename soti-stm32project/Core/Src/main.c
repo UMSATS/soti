@@ -105,8 +105,14 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  HAL_UART_Transmit(&huart2, hello, sizeof(hello), HAL_MAX_DELAY);
-	  HAL_Delay(1000);
+//	  HAL_UART_Transmit(&huart2, hello, 15, HAL_MAX_DELAY);
+
+	  uint8_t data = '\0';
+
+	  if (HAL_UART_Receive(&huart2, &data, 1, HAL_MAX_DELAY) == HAL_OK) {
+		  HAL_UART_Transmit(&huart2, &data, 1, HAL_MAX_DELAY);
+	  }
+//	  HAL_Delay(1000);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
