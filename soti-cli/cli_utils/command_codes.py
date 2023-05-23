@@ -6,7 +6,10 @@ TIMESTAMP_2 = 0xB1
 TIMESTAMP_3 = 0xB2
 
 # commands the CLI sends from a "query" action
+# TODO update this with the corresponding values from the command list
 # QCC_CHARGE = 
 # QCC_COMMAND_QUEUE = 
 # QCC_PAYLOAD = 
-QCC_TELEMETRY = 0xE2
+QCC_MAP = {
+    "telem": 0xE2
+}
