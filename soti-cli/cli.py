@@ -14,7 +14,7 @@ help_subparser = subparsers_group.add_parser("help", add_help=False)
 exit_subparser = subparsers_group.add_parser("exit", add_help=False)
 
 # TODO let this accept base 16 ints
-send_subparser.add_argument("-c", "--code", type=int, required=True, help="the command code to send the satellite")
+send_subparser.add_argument("-c", "--code", required=True, help="the command code to send the satellite")
 send_subparser.add_argument("-t", "--time", type=int, default=0, help="the timestamp to send the command at")
 
 query_subparser.add_argument("attribute", choices=command_codes.QCC_MAP.keys(), help="the attribute to query the satellite for")
@@ -41,7 +41,8 @@ with serial.Serial(port_arg, baudrate=115200, timeout=1) as ser:
 		# TODO checking if time-tagging is required will occur here!
 
 		# write the appropriate command to the serial device
-		ser.write(args.code)
+		# the "0" argument can automatically convert base-16 ints with the 0x prefix
+		ser.write(int(args.code, 0))
 
 		# record the response
 		# TODO how much data do we expect to read from each command?
