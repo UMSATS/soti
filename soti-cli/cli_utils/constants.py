@@ -2,15 +2,22 @@
 def hexint(x):
     return int(x, 16)
 
-# name for the message history JSON file
+# message constants
 MSG_HISTORY_FILENAME = "messages.json"
+MSG_SIZE = 11
 
-# constants for command codes
+# bitmasks for operations on raw message bytes
+PRIORITY_MASK =     0b1100000000000000000000
+SENDER_ID_MASK =    0b0011000000000000000000
+DEST_ID_MASK =      0b0000110000000000000000
+COMM_CODE_MASK =    0b0000001100000000000000
+ARGS_MASK =         0b0000000011111111111111
 
+# constants for command codes & priorities
 COMM_PRIORITIES = {
     # common commands
-    0x01: 0b0001111,    # ack
-    0x02: 0b0000111,    # nack
+    0x01: None,         # ack - priority depends on argument
+    0x02: None,         # nack - priority depends on argument
     0x10: 0b0000000,    # shutdown
 
     # CDH commands

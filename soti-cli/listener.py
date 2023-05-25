@@ -1,4 +1,14 @@
-from cli_utils.constants import MSG_HISTORY_FILENAME, QUERY_ATTRS
+from cli_utils.constants import (
+    MSG_HISTORY_FILENAME,
+    MSG_SIZE,
+    QUERY_ATTRS,
+
+    PRIORITY_MASK,
+    SENDER_ID_MASK,
+    DEST_ID_MASK,
+    COMM_CODE_MASK,
+    ARGS_MASK
+)
 
 import json, serial, sys, datetime
 
@@ -10,13 +20,17 @@ def main_loop():
         json_file = open(MSG_HISTORY_FILENAME)
         while True:
             # block and read indefinitely, reading messages 10 bytes at a time
-            new_msg = ser.read(10)
+            new_msg = ser.read(MSG_SIZE)
 
-            if new_msg[2] in QUERY_ATTRS.keys():
+            comm_code = (new_msg & COMM_CODE_MASK)
+            if comm_code in QUERY_ATTRS.keys():
                 new_msg_json = {
                     "time": datetime.datetime.now().strftime("%T"),
-                    "type": QUERY_ATTRS[new_msg[2]],
-                    "value": int(new_msg[3:], 2),
+                    "sender-id": (new_msg & SENDER_ID_MASK),
+                    "destination-id": (new_msg & DEST_ID_MASK),
+                    "type": QUERY_ATTRS[comm_code]
+                    # the remaining attributes are command-specific,
+                    # and handled on case-by-case basis
                 }
 
                 contents = json.loads(json_file.read())

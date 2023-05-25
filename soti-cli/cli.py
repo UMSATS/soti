@@ -1,8 +1,6 @@
 import argparse, json, serial, sys
 from cli_utils import help_strings
-from cli_utils.constants import COMM_PRIORITIES, MSG_HISTORY_FILENAME, QUERY_ATTRS, hexint
-
-MSG_SIZE = 10
+from cli_utils.constants import COMM_PRIORITIES, MSG_HISTORY_FILENAME, MSG_SIZE, QUERY_ATTRS, hexint
 
 parser = argparse.ArgumentParser(prog="", add_help=False)
 
