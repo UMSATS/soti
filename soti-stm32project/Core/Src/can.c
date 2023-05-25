@@ -9,6 +9,7 @@
  * AUTHORS:
  *  - Graham Driver (graham.driver@umsats.ca)
  *  - Gabriel Young (gabriel.young@outlook.com)
+ *  - Om Sevak (om.sevak@umsats.ca)
  *
  * INITIALLY CREATED ON: May 25, 2022
  * ADAPTED FOR SOTI ON: April 26, 2023
@@ -21,10 +22,12 @@
 #include "can.h"
 #include "can_message_queue.h"
 
+extern CANQueue_t satelliteToGroundQueue;
+extern CANQueue_t groundToSatelliteQueue;
+
 //###############################################################################################
 //Public Functions
 //###############################################################################################
-CANQueue_t* CanQueue;
 /**
  * @brief Boots the CAN Bus
  * 
@@ -33,8 +36,6 @@ CANQueue_t* CanQueue;
 HAL_StatusTypeDef CAN_Init(){
 	//Initializing CAN Message Queue
 	
-	CAN_Queue_Init(CanQueue);
-
     HAL_StatusTypeDef operation_status;
 	CAN_FilterTypeDef sFilterConfig;
 	sFilterConfig.FilterIdHigh = 0x0000;
@@ -106,7 +107,7 @@ HAL_StatusTypeDef CAN_Message_Received() {
         .data = { rxData[1], rxData[2], rxData[3], rxData[4], rxData[5], rxData[6], rxData[7] }
     };
 	
-    bool success = CAN_Queue_Enqueue(CanQueue, &message);
+    bool success = CAN_Queue_Enqueue(&satelliteToGroundQueue, &message);
 
 	if(success) return HAL_OK;
 	else return HAL_ERROR;

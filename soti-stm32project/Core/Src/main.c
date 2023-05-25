@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "can.h"
+#include "can_message_queue.h"
 
 /* USER CODE END Includes */
 
@@ -46,6 +47,11 @@ CAN_HandleTypeDef hcan1;
 UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart2;
 
+
+
+CANQueue_t satelliteToGroundQueue;
+CANQueue_t groundToSatelliteQueue;
+uint8_t canRxData[10];
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -97,22 +103,40 @@ int main(void)
   MX_UART4_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  const char *hello = "Hello, world!\n";
+  CAN_Queue_Init(&satelliteToGroundQueue);
+  CAN_Queue_Init(&groundToSatelliteQueue);
+  HAL_UART_Receive_IT(&huart2, &canRxData, sizeof(canRxData));
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	 if(!CAN_Queue_IsEmpty(&satelliteToGroundQueue)){
+
+	   CANMessage_t receivedData;
+	   uint8_t serializedData[10];
+	   //getting message from the queue.
+	   CAN_Queue_Dequeue(&satelliteToGroundQueue, &receivedData);
+	   //serializing the CanMessage_t to transfer over UART.
+	   serializeCANMessage(&receivedData, serializedData);
+	   //transfering data over UART.
+	   HAL_UART_Transmit(&huart2, &serializedData, sizeof(serializedData), HAL_MAX_DELAY);
+
+	 }
+
+    if(!CAN_Queue_IsEmpty(&groundToSatelliteQueue)){
+        
+        CANMessage_t receivedData;
+        //getting message from the queue.
+        CAN_Queue_Dequeue(&groundToSatelliteQueue, &receivedData);
+
+        //transfering data over UART.
+        CAN_Transmit_Message(receivedData);
+    }
+
     /* USER CODE END WHILE */
-//	  HAL_UART_Transmit(&huart2, hello, 15, HAL_MAX_DELAY);
 
-	  uint8_t data = '\0';
-
-	  if (HAL_UART_Receive(&huart2, &data, 1, HAL_MAX_DELAY) == HAL_OK) {
-		  HAL_UART_Transmit(&huart2, &data, 1, HAL_MAX_DELAY);
-	  }
-//	  HAL_Delay(1000);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -326,6 +350,37 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1)
     if (operation_status != HAL_OK)
     {
         //TODO: Implement error handling for CAN message receives
+    }
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
+
+  CANMessage_t message;
+  deserializeCANMessage(&message, canRxData );
+
+  CAN_Queue_Enqueue(&groundToSatelliteQueue, &message);
+
+  HAL_UART_Receive_IT(&huart2, &canRxData, sizeof(canRxData));
+
+}
+
+void serializeCANMessage(const CANMessage_t* message, uint8_t* serializedData) {
+    serializedData[0] = message->priority;
+    serializedData[1] = message->DestinationID;
+    serializedData[2] = message->command;
+    
+    for (int i = 0; i < 7; i++) {
+        serializedData[3 + i] = message->data[i];
+    }
+}
+
+void deserializeCANMessage(const CANMessage_t* messageBuffer,const uint8_t* deserializedData) {
+    messageBuffer->priority = deserializedData[0] ;
+    messageBuffer->DestinationID = deserializedData[1] ;
+    messageBuffer->command = deserializedData[2];
+    
+    for (int i = 0; i < 7; i++) {
+        messageBuffer->data[i] = deserializedData[3 + i];
     }
 }
 
