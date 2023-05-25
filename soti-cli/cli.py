@@ -1,23 +1,21 @@
-import argparse, serial, sys
-from cli_utils import command_codes, help_strings
+import argparse, json, serial, sys
+from cli_utils import help_strings
+from cli_utils.constants import COMM_PRIORITIES, MSG_HISTORY_FILENAME, QUERY_ATTRS, hexint
 
-def help_command():
-	print(help_strings.help_message)
+MSG_SIZE = 10
 
 parser = argparse.ArgumentParser(prog="", add_help=False)
 
-subparsers_group = parser.add_subparsers(dest="command", help="the available SOTI commands")
+subparsers_group = parser.add_subparsers(dest="operation", help="the available SOTI operations")
 
-send_subparser = subparsers_group.add_parser("send", description="sends a command to the satellite")
-query_subparser = subparsers_group.add_parser("query", description="queries the satellite for information")
+send_subparser = subparsers_group.add_parser("send", description="sends a command to the satellite", help=help_strings.command_map)
+query_subparser = subparsers_group.add_parser("query", description="queries the satellite's message history for information")
 help_subparser = subparsers_group.add_parser("help", add_help=False)
 exit_subparser = subparsers_group.add_parser("exit", add_help=False)
 
-# TODO let this accept base 16 ints
-send_subparser.add_argument("-c", "--code", required=True, help="the command code to send the satellite")
-send_subparser.add_argument("-t", "--time", type=int, default=0, help="the timestamp to send the command at")
+send_subparser.add_argument("command", type=hexint, help="the command code and arguments to send to the satellite, as an 8-bit hexadecimal number")
 
-query_subparser.add_argument("attribute", choices=command_codes.QCC_MAP.keys(), help="the attribute to query the satellite for")
+query_subparser.add_argument("attribute", choices=QUERY_ATTRS.values(), help="the attribute to query the satellite's message history for")
 
 # first script argument will be the device to read/write to
 port_arg = sys.argv[1]
@@ -34,30 +32,36 @@ with serial.Serial(port_arg, baudrate=115200, timeout=1) as ser:
 			args_raw.append(arg_sub)
 
 	args = parser.parse_args(args_raw)
-	data_out = ""
 
-	command = args.command
-	if command == "send":
-		# TODO checking if time-tagging is required will occur here!
+	operation = args.operation
+	if operation == "send":
+		# first two bytes of the argument are the command code
+		code = (args.command & (0xFF00)) >> 8
 
-		# write the appropriate command to the serial device
-		# the "0" argument can automatically convert base-16 ints with the 0x prefix
-		ser.write(int(args.code, 0))
+		# TODO format the argument properly to send to the satellite
 
-		# record the response
-		# TODO how much data do we expect to read from each command?
-		data_out = ser.read()
+		# write the appropriate command + arguments to the serial device
+		print(code)
 
-		# add further processing of output if necessary
-	elif command == "query":
-		print(command_codes.QCC_MAP[args.attribute])
-		ser.read()
-		
-		# add further processing of output if necessary
-	elif command == "help":
+	elif operation == "query":
+		print("\nSearching message history for {} data…\n".format(args.attribute))
+		msg_history = open(MSG_HISTORY_FILENAME)
+		msgs = json.loads(msg_history.read())
+
+		num_results = 0
+
+		for msg in msgs:
+			if msg["type"] == args.attribute:
+				num_results += 1
+				print(msg)
+
+		print("\nFound {} results.".format(num_results))
+
+	elif operation == "help":
 		parser.print_help()
-	# actually handled by the C shell, but we include it here for the facade of a CLI
-	elif command == "exit":
+
+	# exit is actually handled by the C shell, but we include it here for the facade of a CLI
+	elif operation == "exit":
 		pass
 
 	# for debugging

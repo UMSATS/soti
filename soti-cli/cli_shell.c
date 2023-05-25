@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,7 +16,15 @@ int main()
     // trims the newline character from the inputted device
     recv_port[strlen(recv_port) - 1] = '\0';
 
-    // TODO validate user-inputted device
+    // begin a listener thread to sniff telemetry messages
+    printf("\nListening for telemetry messages…\n");
+    pid_t listener_pid = fork();
+    if(listener_pid == 0)
+    {
+        char* exec_args[] = {"python3", "listener.py", recv_port, NULL};
+        execvp("python3", exec_args);
+        exit(0);
+    }
 
     char input[MAX_INPUT_SIZE];
 
@@ -30,6 +39,7 @@ int main()
 
         if(!strcmp(input, "exit\n"))
         {
+            kill(listener_pid, SIGTERM);
             printf("Exiting…\n");
             exit(0);
         }
