@@ -1,7 +1,24 @@
+/*
+ * FILENAME: can_message_queue.c
+ *
+ * DESCRIPTION: CAN message queue implementation source file.
+ *
+ * AUTHORS:
+ *  - Om Sevak (om.sevak@umsats.ca)
+ *
+ * CREATED ON: April 30, 2023
+ */
+
+//###############################################################################################
+// Include Directives
+//###############################################################################################
 #include <string.h>
 #include <stdbool.h>
 #include "can_message_queue.h"
 
+//###############################################################################################
+//Public Functions
+//###############################################################################################
 void CAN_Queue_Init(CANQueue_t* queue) {
     queue->head = 0;
     queue->tail = 0;
