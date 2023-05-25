@@ -20,10 +20,6 @@ query_subparser.add_argument("attribute", choices=QUERY_ATTRS.values(), help="th
 # first script argument will be the device to read/write to
 port_arg = sys.argv[1]
 
-# debug: provide an empty string and we create an unopened serial connection
-if not port_arg:
-	port_arg = None
-
 # use a default read timeout of 1 second to avoid infinite blocking
 with serial.Serial(port_arg, baudrate=115200, timeout=1) as ser:
 	args_raw = []
@@ -63,7 +59,3 @@ with serial.Serial(port_arg, baudrate=115200, timeout=1) as ser:
 	# exit is actually handled by the C shell, but we include it here for the facade of a CLI
 	elif operation == "exit":
 		pass
-
-	# for debugging
-	print(args)
-	print("Send to: ", ser.name)
