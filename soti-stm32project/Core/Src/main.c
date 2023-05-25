@@ -47,13 +47,10 @@ CAN_HandleTypeDef hcan1;
 UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart2;
 
-
-
+/* USER CODE BEGIN PV */
 CANQueue_t satelliteToGroundQueue;
 CANQueue_t groundToSatelliteQueue;
 uint8_t canRxData[10];
-/* USER CODE BEGIN PV */
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
