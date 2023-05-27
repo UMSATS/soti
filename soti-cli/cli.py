@@ -1,6 +1,6 @@
 import argparse, json, serial, sys
 from cli_utils import help_strings
-from cli_utils.constants import COMM_PRIORITIES, MSG_HISTORY_FILENAME, MSG_SIZE, QUERY_ATTRS, hexint
+from cli_utils.constants import COMM_INFO, MSG_HISTORY_FILENAME, SYSTEM_IDS, QUERY_ATTRS
 
 parser = argparse.ArgumentParser(prog="", add_help=False)
 
@@ -11,7 +11,7 @@ query_subparser = subparsers_group.add_parser("query", description="queries the 
 help_subparser = subparsers_group.add_parser("help", add_help=False)
 exit_subparser = subparsers_group.add_parser("exit", add_help=False)
 
-send_subparser.add_argument("command", type=hexint, help="the command code and arguments to send to the satellite, as an 8-bit hexadecimal number")
+send_subparser.add_argument("command", type=str, help="the command code and arguments to send to the satellite, as an 8-bit hexadecimal number")
 
 query_subparser.add_argument("attribute", choices=QUERY_ATTRS.values(), help="the attribute to query the satellite's message history for")
 
@@ -29,13 +29,40 @@ with serial.Serial(port_arg, baudrate=115200, timeout=1) as ser:
 
 	operation = args.operation
 	if operation == "send":
-		# first two bytes of the argument are the command code
-		code = (args.command & (0xFF00)) >> 8
 
-		# TODO format the argument properly to send to the satellite
+		# first byte of the argument is the command code
+		# (this operation grabs the "0x" prefix and first two hex digits)
+		code = int(args.command[0:4], 16)
+
+		# now we can use the code to find its priority & destination id
+		priority = COMM_INFO[code]["priority"]
+		dest_id = COMM_INFO[code]["dest"]
+
+		print(f"Command: {COMM_INFO[code]['name']}\nDestination: {SYSTEM_IDS[COMM_INFO[code]['dest']]}")
+
+		# assumes the sender id for soti is 1; correct me if i'm wrong!
+		buffer = bytearray([priority, 1, dest_id, code, 0, 0, 0, 0, 0, 0, 0])
+
+		# split arguments (if any) into independent bytes
+		input_args = args.command[4:]
+
+		# pad input args to an even number of bytes to avoid trailing 0 issues
+		if len(input_args) % 2:
+			input_args += "0"
+
+		# position variable tracks how much of the supplied command string we've parsed
+		# it should increment by 2, as two characters = 1 byte
+		pos = 0
+		print(input_args)
+		for arg_byte in range(4, 9):
+			if pos < len(input_args):
+				buffer[arg_byte] = int(f"0x{input_args[pos:pos+2]}", 16)
+				pos += 2
+
 
 		# write the appropriate command + arguments to the serial device
-		print(code)
+		print(f"Sending bytes to the satellite: {buffer.hex()}")
+		ser.write(buffer)
 
 	elif operation == "query":
 		print("\nSearching message history for {} data…\n".format(args.attribute))
