@@ -40,8 +40,7 @@ with serial.Serial(port_arg, baudrate=115200, timeout=1) as ser:
 
 		print(f"Command: {COMM_INFO[code]['name']}\nDestination: {SYSTEM_IDS[COMM_INFO[code]['dest']]}")
 
-		# assumes the sender id for soti is 1; correct me if i'm wrong!
-		buffer = bytearray([priority, 1, dest_id, code, 0, 0, 0, 0, 0, 0, 0])
+		buffer = bytearray([priority, 0xFF, dest_id, code, 0, 0, 0, 0, 0, 0, 0])
 
 		# split arguments (if any) into independent bytes
 		input_args = args.command[4:]

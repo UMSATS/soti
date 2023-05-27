@@ -81,7 +81,8 @@ SYSTEM_IDS = {
     0x0: "PCU",
     0x1: "CDH/Comms",
     0x2: "ACDS",
-    0x3: "Payload"
+    0x3: "Payload",
+    0xFF: "SOTI",
 }
 
 # associates the "query" attributes with their command code

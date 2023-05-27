@@ -8,7 +8,13 @@
 
 int main()
 {
-    printf("Welcome to the SOTI CLI!\nOne day I'll put some ASCII art here like in the demo.\n\n");
+    // ascii art lol
+    // font taken from https://patorjk.com/software/taag/
+    printf("\n_._*_    ________  __________ .__'_      _\n"
+"___*   / __/ __ \\/_  __/  _/   __*'.     \\ \\_____\n"
+".___  _\\ \\/ /_/ / / / _/ /    '__*.   ###[==_____>\n"
+"_'._ /___/\\____/ /_/ /___/    *_.__      /_/\n");
+    printf("\nWelcome to the SOTI CLI!\n");
 
     char recv_port[MAX_INPUT_SIZE];
     printf("Enter the port to receive messages from:\n");
