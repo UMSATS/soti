@@ -24,8 +24,28 @@ PRE_BITSTUFF_SEQ = "0b11111"
 
 MIN_PACKET_SIZE = 17
 
+BITS_PER_BYTE = 8
+
+# 63 bytes less two flag bytes - NJR
+MAX_PACKET_LEN = 61
+
+VERSION = 0.1
+
+SPLASH_SCREEN = f"""\
+                Spacecraft Operations and Test Interface
+                -----------------S O T I----------------
+
+University of Manitoba Space Applications and Technology Society (UMSATS)
+
+               AX.25 Packet Test Viewer Version {VERSION}
+
+"""
+
 data_queue = Queue()
 
+"""
+Adds a timestamp to data sent to stdout.
+"""
 def log(string: str) -> None:
     curr_time = datetime.datetime.now().strftime("%T")
     print(f"{curr_time}: {string}")
@@ -42,12 +62,15 @@ def shift_bytes(b: bytearray, n: int) -> bytearray:
 
     return output
 
-def parse_packet(packet_bits: BitArray) -> None:
+"""
+Attempts to scrape the callsigns, SSIDs, and Info field from the packet.
+"""
+def parse_packet(packet_data: BitArray) -> None:
     # Everything but the flag fields are bitstuffed.
     # TODO: TEST THIS!!!!!!!!!!!!!! -NJR
 
     # Get rid of the flag.
-    flag_stripped = packet_bits[8:-8]
+    flag_stripped = packet_data[8:-8]
 
     flag_stripped.replace(POST_BITSTUFF_SEQ, PRE_BITSTUFF_SEQ)
     
@@ -64,22 +87,31 @@ def parse_packet(packet_bits: BitArray) -> None:
     # so figure it out later.
     if (len(decoded_bytes) < MIN_PACKET_SIZE):
         log("Invalid packet decoded!")
+    
+    elif (len(decoded_bytes) > BITS_PER_BYTE * MAX_PACKET_LEN):
+        log("Packet too long, probably not valid.")
 
     else:
-        to_call = str(shift_bytes(decoded_bytes[0:6], 1), "utf-8")
-        to_ssid = str((int(decoded_bytes[6]) >> 1) & 0x0F)
+        try:
+            to_call = str(shift_bytes(decoded_bytes[0:6], 1), "utf-8")
+            to_ssid = str((int(decoded_bytes[6]) >> 1) & 0x0F)
 
-        from_call = str(shift_bytes(decoded_bytes[7:13], 1), "utf-8")
-        from_ssid = str((int(decoded_bytes[13]) >> 1) & 0x0F)
+            from_call = str(shift_bytes(decoded_bytes[7:13], 1), "utf-8")
+            from_ssid = str((int(decoded_bytes[13]) >> 1) & 0x0F)
 
-        control_bits = decoded_bytes[14]
-        protocol_id = decoded_bytes[15]
+            control_bits = decoded_bytes[14]
+            protocol_id = decoded_bytes[15]
 
-        info_field = str(decoded_bytes[16:], "utf-8")
+            info_field = str(decoded_bytes[16:], "utf-8")
 
-        log(f"Decoded Frame: {from_call}-{from_ssid}>{to_call}-{to_ssid}: {info_field}")
-        pass
+            log(f"Decoded Frame: {from_call}-{from_ssid}>{to_call}-{to_ssid}: {info_field}")
+        except:
+            log("Error: Packet unable to be decoded.")
 
+
+"""
+Continually read data from the shared FIFO and attempt to find a packet.
+"""
 def consume_data() -> None:
     packet_bits = BitArray()
     packet_data = BitArray()
@@ -117,9 +149,14 @@ def consume_data() -> None:
             # so get rid of everything but the last <8 bits.
             packet_bits = packet_bits[-7:]
 
-
-
+"""
+Continually feed the FIFO with data received over the given port.
+"""
 def main():
+    print(SPLASH_SCREEN)
+
+    print(f"Attempting to connect to {GR_ADDR}...")
+
     # UDP
     with sock.socket(sock.AF_INET, sock.SOCK_DGRAM) as input_socket:
         input_socket.bind(GR_ADDR)
