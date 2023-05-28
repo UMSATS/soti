@@ -6,13 +6,6 @@ def hexint(x):
 MSG_HISTORY_FILENAME = "messages.json"
 MSG_SIZE = 11
 
-# bitmasks for operations on raw message bytes
-PRIORITY_MASK =     0b1100000000000000000000
-SENDER_ID_MASK =    0b0011000000000000000000
-DEST_ID_MASK =      0b0000110000000000000000
-COMM_CODE_MASK =    0b0000001100000000000000
-ARGS_MASK =         0b0000000011111111111111
-
 # constants for command codes & priorities
 COMM_INFO = {
     # common commands

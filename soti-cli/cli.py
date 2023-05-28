@@ -6,8 +6,9 @@ parser = argparse.ArgumentParser(prog="", add_help=False)
 
 subparsers_group = parser.add_subparsers(dest="operation", help="the available SOTI operations")
 
-send_subparser = subparsers_group.add_parser("send", description="sends a command to the satellite", help=help_strings.command_map)
+send_subparser = subparsers_group.add_parser("send", description="sends a command to the satellite")
 query_subparser = subparsers_group.add_parser("query", description="queries the satellite's message history for information")
+list_subparser = subparsers_group.add_parser("list", description="lists the available commands for each subsystem")
 help_subparser = subparsers_group.add_parser("help", add_help=False)
 exit_subparser = subparsers_group.add_parser("exit", add_help=False)
 
@@ -79,6 +80,9 @@ with serial.Serial(port_arg, baudrate=115200, timeout=1) as ser:
 
 	elif operation == "help":
 		parser.print_help()
+
+	elif operation == "list":
+		print(help_strings.command_map)
 
 	# exit is actually handled by the C shell, but we include it here for the facade of a CLI
 	elif operation == "exit":
