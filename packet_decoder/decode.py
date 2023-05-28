@@ -144,6 +144,9 @@ def consume_data() -> None:
                 parse_packet(packet_data)
                 
                 log(f"Packet found: {str(packet_data.tobytes())}")
+            elif (packet_bits.find(ABORT_SEQ, start=start_pos[0])):
+                log(f"Abort sequence found, likely no packet. Clearing buffer.")
+                packet_bits.clear()
         else:
             # The flag might not be fully here yet,
             # so get rid of everything but the last <8 bits.
@@ -155,10 +158,11 @@ Continually feed the FIFO with data received over the given port.
 def main():
     print(SPLASH_SCREEN)
 
-    print(f"Attempting to connect to {GR_ADDR}...")
+    print(f"Attempting to connect to {GR_ADDR}... ", end="")
 
     # UDP
     with sock.socket(sock.AF_INET, sock.SOCK_DGRAM) as input_socket:
+        print(f"Connected.")
         input_socket.bind(GR_ADDR)
 
         parser_thread = Thread(target=consume_data)
