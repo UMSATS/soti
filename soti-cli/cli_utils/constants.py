@@ -89,4 +89,5 @@ QUERY_ATTRS = {
     0x34: "algae-well-temperature",
     0x35: "rotation-vector-1",
     0x36: "rotation-vector-2",
+    0xFF: "image-data",
 }
