@@ -50,7 +50,7 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 CANQueue_t satelliteToGroundQueue;
 CANQueue_t groundToSatelliteQueue;
-uint8_t canRxData[10];
+uint8_t canRxData[11];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -59,12 +59,9 @@ static void MX_GPIO_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_UART4_Init(void);
 static void MX_USART2_UART_Init(void);
+/* USER CODE BEGIN PFP */
 void serializeCANMessage( CANMessage_t* message, uint8_t* serializedData);
 void deserializeCANMessage( CANMessage_t* messageBuffer,const uint8_t* deserializedData);
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1);
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
-/* USER CODE BEGIN PFP */
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -103,45 +100,41 @@ int main(void)
   MX_CAN1_Init();
   MX_UART4_Init();
   MX_USART2_UART_Init();
+  /* USER CODE BEGIN 2 */
   CAN_Queue_Init(&satelliteToGroundQueue);
   CAN_Queue_Init(&groundToSatelliteQueue);
-  /* USER CODE BEGIN 2 */
   HAL_UART_Receive_IT(&huart2, canRxData, sizeof(canRxData));
-  HAL_UART_Transmit(&huart2,(uint8_t *) "test", 4, HAL_MAX_DELAY);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	 if(!CAN_Queue_IsEmpty(&satelliteToGroundQueue)){
+      if(!CAN_Queue_IsEmpty(&satelliteToGroundQueue)){
 
-	   CANMessage_t receivedData;
-	   uint8_t serializedData[10];
-	   //getting message from the queue.
-	   CAN_Queue_Dequeue(&satelliteToGroundQueue, &receivedData);
-	   //serializing the CanMessage_t to transfer over UART.
-	   serializeCANMessage(&receivedData, serializedData);
-	   //transfering data over UART.
-	   HAL_UART_Transmit(&huart2, serializedData, sizeof(serializedData), HAL_MAX_DELAY);
+          CANMessage_t receivedData;
+          uint8_t serializedData[11];
 
-	 }
+          //getting message from the queue.
+          CAN_Queue_Dequeue(&satelliteToGroundQueue, &receivedData);
+          //serializing the CanMessage_t to transfer over UART.
+          serializeCANMessage(&receivedData, serializedData);
+          //transferring data over UART.
+          HAL_UART_Transmit(&huart2, serializedData, sizeof(serializedData), HAL_MAX_DELAY);
 
-    if(!CAN_Queue_IsEmpty(&groundToSatelliteQueue)){
+      }
+
+
+      if(!CAN_Queue_IsEmpty(&groundToSatelliteQueue)){
         
-        CANMessage_t receivedData;
-        //getting message from the queue.
-        CAN_Queue_Dequeue(&groundToSatelliteQueue, &receivedData);
+          CANMessage_t receivedData;
 
-        HAL_UART_Transmit(&huart2,(uint8_t *) "test", 4, HAL_MAX_DELAY);
-        //transfering data over UART.
-        CAN_Transmit_Message(receivedData);
+          //getting message from the queue.
+          CAN_Queue_Dequeue(&groundToSatelliteQueue, &receivedData);
+          //transfering data over UART.
+          CAN_Transmit_Message(receivedData);
 
-
-    }
-
-	 
-
+      }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -362,34 +355,35 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 
-  CANMessage_t message;
-  deserializeCANMessage(&message, canRxData );
+    CANMessage_t message;
 
-  HAL_UART_Transmit(&huart2,(uint8_t *) "test", 4, HAL_MAX_DELAY);
+    deserializeCANMessage(&message, canRxData);
 
-  CAN_Queue_Enqueue(&groundToSatelliteQueue, &message);
+    CAN_Queue_Enqueue(&groundToSatelliteQueue, &message);
 
-  HAL_UART_Receive_IT(&huart2, canRxData, sizeof(canRxData));
+    HAL_UART_Receive_IT(&huart2, canRxData, sizeof(canRxData));
 
 }
 
-void serializeCANMessage( CANMessage_t* message, uint8_t* serializedData) {
+void serializeCANMessage(CANMessage_t* message, uint8_t* serializedData) {
     serializedData[0] = message->priority;
-    serializedData[1] = message->DestinationID;
-    serializedData[2] = message->command;
+    serializedData[1] = message->SenderID;
+    serializedData[2] = message->DestinationID;
+    serializedData[3] = message->command;
     
     for (int i = 0; i < 7; i++) {
-        serializedData[3 + i] = message->data[i];
+        serializedData[4 + i] = message->data[i];
     }
 }
 
-void deserializeCANMessage( CANMessage_t* messageBuffer,const uint8_t* deserializedData) {
-    messageBuffer->priority = deserializedData[0] ;
-    messageBuffer->DestinationID = deserializedData[1] ;
-    messageBuffer->command = deserializedData[2];
+void deserializeCANMessage(CANMessage_t* messageBuffer, const uint8_t* deserializedData) {
+    messageBuffer->priority = deserializedData[0];
+    messageBuffer->SenderID = deserializedData[1];
+    messageBuffer->DestinationID = deserializedData[2];
+    messageBuffer->command = deserializedData[3];
     
     for (int i = 0; i < 7; i++) {
-        messageBuffer->data[i] = deserializedData[3 + i];
+        messageBuffer->data[i] = deserializedData[4 + i];
     }
 }
 

@@ -22,9 +22,6 @@
 #include "can.h"
 #include "can_message_queue.h"
 
-extern CANQueue_t satelliteToGroundQueue;
-extern CANQueue_t groundToSatelliteQueue;
-
 //###############################################################################################
 //Public Functions
 //###############################################################################################
@@ -34,9 +31,8 @@ extern CANQueue_t groundToSatelliteQueue;
  * @return HAL_StatusTypeDef 
  */
 HAL_StatusTypeDef CAN_Init(){
-	//Initializing CAN Message Queue
-	
     HAL_StatusTypeDef operation_status;
+
 	CAN_FilterTypeDef sFilterConfig;
 	sFilterConfig.FilterIdHigh = 0x0000;
 	sFilterConfig.FilterIdLow = 0x0000;
@@ -63,7 +59,7 @@ error:
 /**
  * @brief Used to send messages over CAN
  *
- * @param myMessage: An 8 byte message
+ * @param myMessage: The CAN message
  *
  * @return HAL_StatusTypeDef
  */
@@ -89,25 +85,25 @@ HAL_StatusTypeDef CAN_Transmit_Message(CANMessage_t myMessage){
  * @return HAL_StatusTypeDef
  */
 HAL_StatusTypeDef CAN_Message_Received() {
-
     HAL_StatusTypeDef operation_status;
 	CAN_RxHeaderTypeDef rxMessage; // Received Message Header
 	uint8_t rxData[8]; // Received data
-	uint8_t receivedDestinationId; // ID of Received Message
+	uint8_t receivedDestinationId; // Destination ID of Received Message
 
 	/* Get RX message */
 	operation_status = HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &rxMessage, rxData);
 	if (operation_status != HAL_OK) goto error;
+	receivedDestinationId = RECEIVED_DESTINATION_ID_MASK & rxMessage.StdId;
 
-	// TODO: add received message to queue
-	CANMessage_t message = {
+	CANMessage_t can_message = {
         .priority = rxMessage.RTR == CAN_RTR_REMOTE ? 0x7F : rxMessage.ExtId >> 24,
-        .DestinationID = rxMessage.ExtId & RECEIVED_DESTINATION_ID_MASK,
+        .SenderID = (RECEIVED_SENDER_ID_MASK & rxMessage.StdId) >> 2,
+        .DestinationID = receivedDestinationId,
         .command = rxData[0],
-        .data = { rxData[1], rxData[2], rxData[3], rxData[4], rxData[5], rxData[6], rxData[7] }
+        .data = {rxData[1], rxData[2], rxData[3], rxData[4], rxData[5], rxData[6], rxData[7]}
     };
 	
-    bool success = CAN_Queue_Enqueue(&satelliteToGroundQueue, &message);
+    bool success = CAN_Queue_Enqueue(&satelliteToGroundQueue, &can_message);
 
 	if(success) return HAL_OK;
 	else return HAL_ERROR;
