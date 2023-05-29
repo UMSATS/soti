@@ -87,9 +87,11 @@ def parse_packet(packet_data: BitArray) -> None:
     # so figure it out later.
     if (len(decoded_bytes) < MIN_PACKET_SIZE):
         log("Invalid packet decoded!")
+        return False
     
     elif (len(decoded_bytes) > BITS_PER_BYTE * MAX_PACKET_LEN):
         log("Packet too long, probably not valid.")
+        return False
 
     else:
         try:
@@ -107,6 +109,9 @@ def parse_packet(packet_data: BitArray) -> None:
             log(f"Decoded Frame: {from_call}-{from_ssid}>{to_call}-{to_ssid}: {info_field}")
         except:
             log("Error: Packet unable to be decoded.")
+            return False
+    
+    return True
 
 
 """
@@ -141,9 +146,8 @@ def consume_data() -> None:
                 packet_data = packet_bits[start_pos[0]:end_pos[0]+8]
                 packet_bits = packet_bits[end_pos[0]+8:]
 
-                parse_packet(packet_data)
-                
-                log(f"Packet found: {str(packet_data.tobytes())}")
+                if (parse_packet(packet_data)):
+                    log(f"Packet found: {str(packet_data.tobytes())}")
             elif (packet_bits.find(ABORT_SEQ, start=start_pos[0])):
                 log(f"Abort sequence found, likely no packet. Clearing buffer.")
                 packet_bits.clear()
