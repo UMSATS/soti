@@ -104,6 +104,7 @@ int main(void)
   CAN_Queue_Init(&satelliteToGroundQueue);
   CAN_Queue_Init(&groundToSatelliteQueue);
   HAL_UART_Receive_IT(&huart2, canRxData, sizeof(canRxData));
+  CAN_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
