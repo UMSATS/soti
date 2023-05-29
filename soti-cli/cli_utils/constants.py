@@ -81,6 +81,7 @@ SYSTEM_IDS = {
 # associates the "query" attributes with their command code
 # so they can be pulled out of the message history file
 QUERY_ATTRS = {
+    0x01: "ack",
     0x30: "battery-charge",
     0x31: "battery-temperature",
     0x32: "satellite-current-consumption",

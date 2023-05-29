@@ -44,7 +44,21 @@ def parse_36(args, output):
     output["measurement-accuracy"] = int(f"0x{args[6:10]}", 16)
     return output
 
+def parse_01(args, output):
+    output["acknowledged-command"] = f"0x{args[:2]}"
+    output["reply-data"] = f"0x{args[2:]}"
+    return output
+
+"""
+Parse all other packets.
+"""
+def parse_generic(args, output):
+    output["command"] = f"0x{args[:2]}"
+    output["arguments"] = f"0x{args[2:]}"
+    return output
+
 parsers = {
+    0x01: parse_01,
     0x30: parse_30,
     0x31: parse_31,
     0x32: parse_32,
