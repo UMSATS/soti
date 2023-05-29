@@ -56,6 +56,7 @@ NVIC.PriorityGroup=NVIC_PRIORITYGROUP_4
 NVIC.SVCall_IRQn=true\:0\:0\:false\:false\:true\:true\:false\:false
 NVIC.SysTick_IRQn=true\:0\:0\:false\:false\:true\:true\:true\:false
 NVIC.UART4_IRQn=true\:0\:0\:false\:false\:true\:true\:true\:true
+NVIC.USART2_IRQn=true\:0\:0\:false\:false\:true\:true\:true\:true
 NVIC.UsageFault_IRQn=true\:0\:0\:false\:false\:true\:true\:false\:false
 PA0.Mode=Asynchronous
 PA0.Signal=UART4_TX
