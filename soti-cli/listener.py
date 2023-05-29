@@ -5,6 +5,8 @@ from cli_utils.constants import (
     SYSTEM_IDS
 )
 
+from cli_utils.command_args import parsers
+
 import json, serial, sys, datetime
 
 def bytes_to_string(msg):
@@ -29,26 +31,37 @@ def parse(msg_raw):
             # the remaining attributes are command-specific,
             # and handled on case-by-case basis
         }
+
+        if comm_code in parsers.keys():
+            new_msg_json = parsers[comm_code](msg[10:], new_msg_json)
+
         return new_msg_json
     return None
 
 # first script argument will be the device to read/write to
 port_arg = sys.argv[1]
 
+def init_json():
+    with open(MSG_HISTORY_FILENAME, "r+") as history:
+        if not history.read():
+            history.write("[]")
+
 def main_loop():
     with serial.Serial(port_arg, baudrate=115200) as ser:
-        json_file = open(MSG_HISTORY_FILENAME)
         while True:
             # block and read indefinitely, reading messages 11 bytes at a time
             new_msg = ser.read(MSG_SIZE)
 
             new_msg_json = parse(new_msg)
             if new_msg_json:
-                contents = json.loads(json_file.read())
-                contents.append(new_msg_json)
-                json_file.write(json.dumps(contents, indent=4))
+                with open(MSG_HISTORY_FILENAME) as history:
+                    contents = json.load(history)
+                    contents.append(new_msg_json)
+                with open(MSG_HISTORY_FILENAME, 'w') as history:
+                    json.dump(contents, history, indent=4)
 
 try:
+    init_json()
     main_loop()
 except KeyboardInterrupt:
     print("\nTelemetry listener exiting…")
