@@ -46,7 +46,8 @@ def parse_36(args, output):
 
 def parse_01(args, output):
     output["acknowledged-command"] = f"0x{args[:2]}"
-    output["reply-data"] = f"0x{args[2:]}"
+    # Breaking this up so that camera stuff can be processed.
+    output["reply-data"] = [f"0x{args[i:i+2]}" for i in range(0, len(args) - 2, 2)]
     return output
 
 """
