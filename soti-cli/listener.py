@@ -27,10 +27,13 @@ def parse(msg_raw):
         "priority": int(f"0x{msg[2:4]}", 16),
         "sender-id": SYSTEM_IDS[int(f"0x{msg[4:6]}", 16)],
         "destination-id": SYSTEM_IDS[int(f"0x{msg[6:8]}", 16)],
-        "type": QUERY_ATTRS.get(comm_code) or "other-telemetry",
+        "type": QUERY_ATTRS.get(comm_code) or "other-message",
         # the remaining attributes are command-specific,
         # and handled on case-by-case basis
     }
+
+    if new_msg_json["type"] == "other-message":
+        new_msg_json["command-code"] = f"0x{msg[8:10]}"
 
     if comm_code in parsers.keys():
         new_msg_json = parsers[comm_code](msg[10:], new_msg_json)
