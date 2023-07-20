@@ -105,6 +105,8 @@ int main(void)
   CAN_Queue_Init(&groundToSatelliteQueue);
   HAL_UART_Receive_IT(&huart2, canRxData, sizeof(canRxData));
   CAN_Init();
+  //Turn off green LED
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -350,7 +352,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1)
     operation_status = CAN_Message_Received();
     if (operation_status != HAL_OK)
     {
-        //TODO: Implement error handling for CAN message receives
+        //Turn on green LED
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
     }
 }
 
