@@ -57,7 +57,7 @@ def main_loop():
             # block and read indefinitely, reading messages 11 bytes at a time
             new_msg = ser.read(MSG_SIZE)
 
-            print(f"New Message: {new_msg}")
+            print(f"New Message: {new_msg.hex()}")
 
             new_msg_json = parse(new_msg)
 
