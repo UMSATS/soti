@@ -3,6 +3,12 @@
 
 from .constants import COMM_INFO
 
+def parse_01(args, output):
+    output["acknowledged-command"] = f"0x{args[:2]}"
+    # Data is stored as a list so that camera data can be easily processed.
+    output["reply-data"] = [f"0x{args[i:i+2]}" for i in range(2, 14, 2)]
+    return output
+
 def parse_30(args, output):
     output["telemetry-sequence-number"] = int(f"0x{args[:2]}", 16)
     output["battery-charge"] = int(f"0x{args[2:10]}", 16)
@@ -42,12 +48,6 @@ def parse_36(args, output):
     output["telemetry-sequence-number"] = int(f"0x{args[:2]}", 16)
     output["quaternion-real-component"] = int(f"0x{args[2:6]}", 16)
     output["measurement-accuracy"] = int(f"0x{args[6:10]}", 16)
-    return output
-
-def parse_01(args, output):
-    output["acknowledged-command"] = f"0x{args[:2]}"
-    # Breaking this up so that camera stuff can be processed.
-    output["reply-data"] = [f"0x{args[i:i+2]}" for i in range(0, len(args) - 2, 2)]
     return output
 
 """
