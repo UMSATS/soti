@@ -9,6 +9,7 @@
  * AUTHORS:
  *  - Graham Driver (graham.driver@umsats.ca)
  *  - Gabriel Young (gabriel.young@outlook.com)
+ *  - Om Sevak (om.sevak@umsats.ca)
  *
  * INITIALLY CREATED ON: May 25, 2022
  * ADAPTED FOR SOTI ON: April 26, 2023
@@ -19,11 +20,11 @@
 //###############################################################################################
 #include <stdio.h>
 #include "can.h"
+#include "can_message_queue.h"
 
 //###############################################################################################
 //Public Functions
 //###############################################################################################
-
 /**
  * @brief Boots the CAN Bus
  * 
@@ -58,7 +59,7 @@ error:
 /**
  * @brief Used to send messages over CAN
  *
- * @param myMessage: An 8 byte message
+ * @param myMessage: The CAN message
  *
  * @return HAL_StatusTypeDef
  */
@@ -84,17 +85,28 @@ HAL_StatusTypeDef CAN_Transmit_Message(CANMessage_t myMessage){
  * @return HAL_StatusTypeDef
  */
 HAL_StatusTypeDef CAN_Message_Received() {
-
     HAL_StatusTypeDef operation_status;
 	CAN_RxHeaderTypeDef rxMessage; // Received Message Header
 	uint8_t rxData[8]; // Received data
-	uint8_t receivedDestinationId; // ID of Received Message
+	uint8_t receivedDestinationId; // Destination ID of Received Message
 
 	/* Get RX message */
 	operation_status = HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &rxMessage, rxData);
 	if (operation_status != HAL_OK) goto error;
+	receivedDestinationId = RECEIVED_DESTINATION_ID_MASK & rxMessage.StdId;
 
-	// TODO: add received message to queue
+	CANMessage_t can_message = {
+        .priority = rxMessage.StdId >> 4,
+        .SenderID = (RECEIVED_SENDER_ID_MASK & rxMessage.StdId) >> 2,
+        .DestinationID = receivedDestinationId,
+        .command = rxData[0],
+        .data = {rxData[1], rxData[2], rxData[3], rxData[4], rxData[5], rxData[6], rxData[7]}
+    };
+	
+    bool success = CAN_Queue_Enqueue(&satelliteToGroundQueue, &can_message);
+
+	if(success) return HAL_OK;
+	else return HAL_ERROR;
 
 error:
 	return operation_status;
