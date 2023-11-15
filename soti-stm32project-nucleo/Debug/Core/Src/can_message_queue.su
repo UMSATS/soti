@@ -1,0 +1,5 @@
+../Core/Src/can_message_queue.c:23:6:CAN_Queue_Init	16	static
+../Core/Src/can_message_queue.c:28:6:CAN_Queue_IsEmpty	16	static
+../Core/Src/can_message_queue.c:32:6:CAN_Queue_IsFull	16	static
+../Core/Src/can_message_queue.c:36:6:CAN_Queue_Enqueue	24	static
+../Core/Src/can_message_queue.c:48:6:CAN_Queue_Dequeue	24	static
