@@ -1,3 +1,0 @@
-../Core/Src/can.c:33:19:CAN_Init	3
-../Core/Src/can.c:66:19:CAN_Transmit_Message	1
-../Core/Src/can.c:87:19:CAN_Message_Received	3
