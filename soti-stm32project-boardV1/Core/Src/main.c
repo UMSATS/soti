@@ -21,7 +21,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "can.h"
+#include "can_message_queue.h"
+#include "LEDs_driver.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,7 +49,9 @@ I2C_HandleTypeDef hi2c3;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-
+CANQueue_t satelliteToGroundQueue;
+CANQueue_t groundToSatelliteQueue;
+uint8_t canRxData[11];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -57,7 +61,8 @@ static void MX_CAN1_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_I2C3_Init(void);
 /* USER CODE BEGIN PFP */
-
+void serializeCANMessage( CANMessage_t* message, uint8_t* serializedData);
+void deserializeCANMessage( CANMessage_t* messageBuffer, const uint8_t* deserializedData);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -97,13 +102,39 @@ int main(void)
   MX_USART3_UART_Init();
   MX_I2C3_Init();
   /* USER CODE BEGIN 2 */
-
+  CAN_Queue_Init(&satelliteToGroundQueue);
+  CAN_Queue_Init(&groundToSatelliteQueue);
+  HAL_UART_Receive_IT(&huart3, canRxData, sizeof(canRxData));
+  CAN_Init();
+  LEDs_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    if (!CAN_Queue_IsEmpty(&satelliteToGroundQueue))
+    {
+      CANMessage_t receivedData;
+      uint8_t serializedData[11];
+
+      //getting message from the queue.
+      CAN_Queue_Dequeue(&satelliteToGroundQueue, &receivedData);
+      //serializing the CanMessage_t to transfer over UART.
+      serializeCANMessage(&receivedData, serializedData);
+      //transferring data over UART.
+      HAL_UART_Transmit(&huart3, serializedData, sizeof(serializedData), HAL_MAX_DELAY);
+    }
+
+    if (!CAN_Queue_IsEmpty(&groundToSatelliteQueue))
+    {
+      CANMessage_t receivedData;
+
+      //getting message from the queue.
+      CAN_Queue_Dequeue(&groundToSatelliteQueue, &receivedData);
+      //transferring data over CAN.
+      CAN_Transmit_Message(receivedData);
+    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -325,7 +356,58 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+/**
+  * @brief  Rx Fifo 0 message pending callback
+  * @param  hcan: pointer to a CAN_HandleTypeDef structure that contains
+  *         the configuration information for the specified CAN.
+  * @retval None
+  */
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1)
+{
+  HAL_StatusTypeDef operation_status;
+  operation_status = CAN_Message_Received();
+  if (operation_status != HAL_OK)
+  {
+    //TODO: Implement error handling using the LCD character display
+  }
+}
 
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  CANMessage_t message;
+
+  deserializeCANMessage(&message, canRxData);
+
+  CAN_Queue_Enqueue(&groundToSatelliteQueue, &message);
+
+  HAL_UART_Receive_IT(&huart3, canRxData, sizeof(canRxData));
+}
+
+void serializeCANMessage(CANMessage_t* message, uint8_t* serializedData)
+{
+  serializedData[0] = message->priority;
+  serializedData[1] = message->SenderID;
+  serializedData[2] = message->DestinationID;
+  serializedData[3] = message->command;
+
+  for (int i = 0; i < 7; i++)
+  {
+    serializedData[4 + i] = message->data[i];
+  }
+}
+
+void deserializeCANMessage(CANMessage_t* messageBuffer, const uint8_t* deserializedData)
+{
+  messageBuffer->priority = deserializedData[0];
+  messageBuffer->SenderID = deserializedData[1];
+  messageBuffer->DestinationID = deserializedData[2];
+  messageBuffer->command = deserializedData[3];
+
+  for (int i = 0; i < 7; i++)
+  {
+    messageBuffer->data[i] = deserializedData[4 + i];
+  }
+}
 /* USER CODE END 4 */
 
 /**

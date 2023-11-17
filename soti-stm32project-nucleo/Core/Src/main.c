@@ -60,7 +60,7 @@ static void MX_CAN1_Init(void);
 static void MX_UART4_Init(void);
 /* USER CODE BEGIN PFP */
 void serializeCANMessage( CANMessage_t* message, uint8_t* serializedData);
-void deserializeCANMessage( CANMessage_t* messageBuffer,const uint8_t* deserializedData);
+void deserializeCANMessage( CANMessage_t* messageBuffer, const uint8_t* deserializedData);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -131,7 +131,7 @@ int main(void)
 
       //getting message from the queue.
       CAN_Queue_Dequeue(&groundToSatelliteQueue, &receivedData);
-      //transfering data over UART.
+      //transferring data over CAN.
       CAN_Transmit_Message(receivedData);
     }
     /* USER CODE END WHILE */
