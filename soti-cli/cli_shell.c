@@ -22,12 +22,21 @@ int main()
     // trims the newline character from the inputted device
     recv_port[strlen(recv_port) - 1] = '\0';
 
-    // begin a listener thread to sniff telemetry messages
+    // begin a listener thread to sniff telemetry messages and add them to a queue
     printf("\nListening for telemetry messages…\n");
     pid_t listener_pid = fork();
     if(listener_pid == 0)
     {
         char* exec_args[] = {"python3", "listener.py", recv_port, NULL};
+        execvp("python3", exec_args);
+        exit(0);
+    }
+
+    //begin a parser thread to parse messages from a queue
+    pid_t parser_pid = fork();
+    if(parser_pid == 0)
+    {
+        char*exec_args[] = {"python3","parser.py",recv_port, NULL};
         execvp("python3", exec_args);
         exit(0);
     }
@@ -46,6 +55,7 @@ int main()
         if(!strcmp(input, "exit\n"))
         {
             kill(listener_pid, SIGTERM);
+            kill(parser_pid, SIGTERM);
             printf("Exiting…\n");
             exit(0);
         }
