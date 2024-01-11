@@ -27,6 +27,7 @@ int main()
     pid_t listener_pid = fork();
     if(listener_pid == 0)
     {
+        printf("%d", listener_pid);
         char* exec_args[] = {"python3", "listener.py", recv_port, NULL};
         execvp("python3", exec_args);
         exit(0);
@@ -36,6 +37,7 @@ int main()
     pid_t parser_pid = fork();
     if(parser_pid == 0)
     {
+        printf("%d", parser_pid);
         char*exec_args[] = {"python3","parser.py",recv_port, NULL};
         execvp("python3", exec_args);
         exit(0);
