@@ -20,9 +20,9 @@
 //###############################################################################################
 void LEDs_Init()
 {
-    HAL_GPIO_WritePin(LED4_GPIO, LED4_PIN, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LED5_GPIO, LED5_PIN, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(LED6_GPIO, LED6_PIN, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LED4_GPIO, LED4_PIN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(LED5_GPIO, LED5_PIN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(LED6_GPIO, LED6_PIN, GPIO_PIN_SET);
 }
 
 void LED4_On()
