@@ -35,6 +35,8 @@ bool CAN_Queue_IsFull(const CANQueue_t* queue) {
 
 bool CAN_Queue_Enqueue(CANQueue_t* queue, CANMessage_t* message) {
     if (CAN_Queue_IsFull(queue)) {
+        //TODO: Display full message on LCD
+
         return false;
     }
 
