@@ -10,6 +10,7 @@
 
 #include "stm32l4xx_hal.h"
 #include "LCD_C0216CiZ_driver.h"
+#include "main.h"
 
 extern I2C_HandleTypeDef hi2c3;
 
@@ -21,6 +22,7 @@ void LCD_SEND(uint8_t ControlByte, uint8_t i2c_addr, uint8_t data){
 	Data[1] = data;
 
 	HAL_I2C_Master_Transmit(&hi2c3, (uint16_t)i2c_addr, Data, 2, 50);
+
 }
 
 uint8_t LCD_SET_CURSOR(uint8_t position){
@@ -42,7 +44,6 @@ uint8_t LCD_SET_CURSOR(uint8_t position){
 
 void LCD_PRINT_CHAR(unsigned char chr){
 
-
 	LCD_SEND(LCD_CONTROL_DATA, LCD_ADDR, (uint8_t)chr);
 
 }
@@ -63,6 +64,8 @@ void LCD_PRINT_STR(char * str, uint8_t position){
 }
 
 void LCD_INIT(){
+
+  HAL_GPIO_WritePin(LCD_nReset_GPIO_Port, LCD_nReset_Pin, GPIO_PIN_SET);
 
 	HAL_Delay(60);
 
@@ -91,8 +94,3 @@ void LCD_INIT(){
 	LCD_SEND(LCD_CONTROL_CMD, LCD_ADDR, 0x06);
 
 }
-
-
-
-
-

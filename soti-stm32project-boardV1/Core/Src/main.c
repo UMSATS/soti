@@ -108,14 +108,10 @@ int main(void)
   HAL_UART_Receive_IT(&huart3, canRxData, sizeof(canRxData));
   CAN_Init();
   LEDs_Init();
-
-  HAL_GPIO_WritePin(LCD_nReset_GPIO_Port, LCD_nReset_Pin, GPIO_PIN_SET);
   LCD_INIT();
 
   char *str = "WELCOME TO SOTI!";
-
   LCD_PRINT_STR(str, 0);
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
