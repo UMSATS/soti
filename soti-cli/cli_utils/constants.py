@@ -31,6 +31,11 @@ COMM_INFO = {
     0x46: {"priority": 0b0000111, "dest": 0x1, "name": "send UFH beacon"},
     0x47: {"priority": 0b0000111, "dest": 0x1, "name": "get CDH task list"},
     0x48: {"priority": 0b0000111, "dest": 0x1, "name": "sample time-tagged task"},
+    0x49: {"priority": 0b0000111, "dest": 0x1, "name": "set internal rtc"},
+    0x4A: {"priority": 0b0111111, "dest": 0x1, "name": "get internal rtc"},
+    0x50: {"priority": 0b0000000, "dest": 0x1, "name": "PLD error report"},
+    0x51: {"priority": 0b0000000, "dest": 0x1, "name": "ADCS error report"},
+    0x52: {"priority": 0b0000000, "dest": 0x1, "name": "PWR error report"},
 
     # PLD commands
     0xA0: {"priority": 0b0000000, "dest": 0x3, "name": "STM32 reset (PLD)"},

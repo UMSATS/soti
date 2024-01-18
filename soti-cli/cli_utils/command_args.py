@@ -50,6 +50,53 @@ def parse_36(args, output):
     output["measurement-accuracy"] = int(f"0x{args[6:10]}", 16)
     return output
 
+def parse_40(args, output):
+    return output
+
+def parse_41(args, output):
+    return output
+
+def parse_42(args, output):
+    return output
+
+def parse_43(args, output):
+    return output
+
+def parse_44(args, output):
+    return output
+
+def parse_45(args, output):
+    return output
+
+def parse_46(args, output):
+    return output
+
+def parse_47(args, output):
+    return output
+
+def parse_48(args, output):
+    output["unix-timestamp"] = int(f"0x{args[:8]}", 16)
+    return output
+
+def parse_49(args, output):
+    output["unix-timestamp"] = int(f"0x{args[:8]}", 16)
+    return output
+
+def parse_4A(args, output):
+    return output
+
+def parse_50(args, output):
+    output["error-report"] = int(f"0x{args[:]}", 16)
+    return output
+
+def parse_51(args, output):
+    output["error-report"] = int(f"0x{args[:]}", 16)
+    return output
+
+def parse_52(args, output):
+    output["error-report"] = int(f"0x{args[:]}", 16)
+    return output
+
 """
 Parse all other packets.
 """
@@ -67,4 +114,18 @@ parsers = {
     0x34: parse_34,
     0x35: parse_35,
     0x36: parse_36,
+    0x40: parse_40,
+    0x41: parse_41,
+    0x42: parse_42,
+    0x43: parse_43,
+    0x44: parse_44,
+    0x45: parse_45,
+    0x46: parse_46,
+    0x47: parse_47,
+    0x48: parse_48,
+    0x49: parse_49,
+    0x4A: parse_4A,
+    0x50: parse_50,
+    0x51: parse_51,
+    0x52: parse_52,
 }
