@@ -1,8 +1,8 @@
 /*
- * LCD_C0216CiZ_driver.h
+ *  LCD_C0216CiZ_driver.h
  *
  *  Created on: Nov 6, 2023
- *      Author: Andrii Kvasnytsia
+ *  Author: Andrii Kvasnytsia
  */
 
 // Datasheet URL:
@@ -31,6 +31,8 @@ uint8_t LCD_SET_CURSOR(uint8_t position);
 void LCD_PRINT_CHAR(unsigned char chr);
 
 void LCD_PRINT_STR(char * str, uint8_t position);
+
+void LCD_CLEAR_DISPLAY(void);
 
 void LCD_INIT(void);
 
