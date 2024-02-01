@@ -1,8 +1,9 @@
 # well-known help messages for commands
 help_message = """
-Use \"-h\" with any operation for specific help.
-send: sends a command to the board
-query: retrieves information from the board
+send: sends a command to the satellite (input is hexadecimal, ex. 0xA1)
+query: queries the satellite's message history for information
+help: displays this message
+list: lists the available commands for each subsystem
 exit: exits the program
 """
 
