@@ -48,6 +48,13 @@ for port, desc, hwid in sorted(ports):
 
 soti_port = input("\nEnter the port to receive messages from:")
 
+try:
+    init_json()
+    main_loop_listener()
+    main_loop_parser()
+except:
+    print("\nTelemetry listener exiting…")
+    sys.exit(0)
 
 
 # cli.py
@@ -65,11 +72,8 @@ send_subparser.add_argument("command", type=str, help="the command code and argu
 
 query_subparser.add_argument("attribute", choices=QUERY_ATTRS.values(), help="the attribute to query the satellite's message history for")
 
-# first script argument will be the device to read/write to
-port_arg = sys.argv[1]
-
 # use a default read timeout of 1 second to avoid infinite blocking
-with serial.Serial(port_arg, baudrate=115200, timeout=1) as ser:
+with serial.Serial(soti_port, baudrate=115200, timeout=1) as ser:
 	args_raw = []
 	for arg in sys.argv[2:]:
 		for arg_sub in arg.split():
@@ -137,8 +141,6 @@ with serial.Serial(port_arg, baudrate=115200, timeout=1) as ser:
 	elif operation == "exit":
 		pass
 
-
-
 # listener.py
 def bytes_to_string(msg):
     result = "0x"
@@ -181,7 +183,7 @@ def init_json():
         if not history.read():
             history.write("[]")
 
-def main_loop():
+def main_loop_listener():
     print("Running")
     with serial.Serial(port_arg, baudrate=115200) as ser:
         while True:
@@ -200,15 +202,6 @@ def main_loop():
                     contents.append(new_msg_json)
                 with open(MSG_HISTORY_FILENAME, 'w') as history:
                     json.dump(contents, history, indent=4)
-
-try:
-    init_json()
-    main_loop()
-except KeyboardInterrupt:
-    print("\nTelemetry listener exiting…")
-    sys.exit(0)
-
-
 
 # parser.py
 def bytes_to_string(msg):
@@ -249,7 +242,7 @@ def init_json():
         if not history.read():
             history.write("[]")
 
-def parse_msg():
+def main_loop_parser():
     while True:
         try:
             new_msg_raw = msg_queue.get()
@@ -267,6 +260,3 @@ def parse_msg():
         except msg_queue.empty():
             pass
 
-if __name__ == "__main__":
-    init_json()
-    parse_msg()
