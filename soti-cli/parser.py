@@ -9,7 +9,7 @@ from cli_utils.command_args import parsers, parse_generic
 
 from shared_queue import msg_queue
 
-import json, sys, datetime, queue
+import json, serial, sys, datetime, queue
 
 def bytes_to_string(msg):
     result = "0x"
@@ -54,10 +54,9 @@ def parse_msg():
         try:
             new_msg_raw = msg_queue.get()
             new_msg_json = parse(msg_queue.get())
-            print(new_msg_json)
-        
+
             print(f"Message Parsed: {new_msg_json}")
-        
+
             if new_msg_json:
                 with open(MSG_HISTORY_FILENAME) as history:
                     contents = json.load(history)
