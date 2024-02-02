@@ -48,15 +48,6 @@ for port, desc, hwid in sorted(ports):
 
 soti_port = input("\nEnter the port to receive messages from:")
 
-try:
-    init_json()
-    main_loop_listener()
-    main_loop_parser()
-except:
-    print("\nTelemetry listener exiting…")
-    sys.exit(0)
-
-
 # cli.py
 parser = argparse.ArgumentParser(prog="", add_help=False)
 
@@ -142,35 +133,30 @@ with serial.Serial(soti_port, baudrate=115200, timeout=1) as ser:
 		pass
 
 # listener.py
-# first script argument will be the device to read/write to
-port_arg = sys.argv[1]
+msg_queue = multiprocessing.Queue()
+            
+#listens for messages and puts them into a queue    
+def listener():
+    print("Running")
+    with serial.Serial(soti_port, baudrate=115200) as ser:
+        while True:
+            # block and read indefinitely, reading messages 11 bytes at a time
+            new_msg = ser.read(MSG_SIZE)
+            msg_queue.put(new_msg)
+            print(f"New Message: {new_msg.hex()}")
+try:
+    listener()
 
+except:
+    print("\nTelemetry listener exiting…")
+    sys.exit(0)
+
+# parser.py
 def init_json():
     with open(MSG_HISTORY_FILENAME, "r+") as history:
         if not history.read():
             history.write("[]")
-
-def main_loop_listener():
-    print("Running")
-    with serial.Serial(port_arg, baudrate=115200) as ser:
-        while True:
-            # block and read indefinitely, reading messages 11 bytes at a time
-            new_msg = ser.read(MSG_SIZE)
-
-            print(f"New Message: {new_msg.hex()}")
-
-            new_msg_json = parse(new_msg)
-
-            print(f"Message Parsed: {new_msg_json}")
-
-            if new_msg_json:
-                with open(MSG_HISTORY_FILENAME) as history:
-                    contents = json.load(history)
-                    contents.append(new_msg_json)
-                with open(MSG_HISTORY_FILENAME, 'w') as history:
-                    json.dump(contents, history, indent=4)
-
-# parser.py
+            
 def bytes_to_string(msg):
     result = "0x"
     for byte in msg:
@@ -204,12 +190,16 @@ def parse(msg_raw):
 
     return new_msg_json
 
-def init_json():
-    with open(MSG_HISTORY_FILENAME, "r+") as history:
-        if not history.read():
-            history.write("[]")
-
-def main_loop_parser():
+def parser():
+    
+    init_json()
+    try:
+        init_json()
+    except:
+        print("Json file couldn't be opened")
+        input("Press enter to exit")
+        sys.exit(0)
+        
     while True:
         new_msg_raw = msg_queue.get()
         new_msg_json = parse(new_msg_raw)
@@ -222,4 +212,3 @@ def main_loop_parser():
                 contents.append(new_msg_json)
             with open(MSG_HISTORY_FILENAME, 'w') as history:
                 json.dump(contents, history, indent=4)
-
