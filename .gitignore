@@ -6,3 +6,5 @@ soti-stm32project-boardV1/Debug/
 __pycache__
 cli
 *.DS_Store
+messages.json
+soti-cli/messages.json
