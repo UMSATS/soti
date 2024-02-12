@@ -15,13 +15,9 @@
 //###############################################################################################
 // Include Directives
 //###############################################################################################
+#include <stdint.h>
 #include <stdbool.h>
 #include "can.h"
-
-//###############################################################################################
-// Define Directives
-//###############################################################################################
-#define CAN_QUEUE_SIZE 7000
 
 //###############################################################################################
 // Structs
@@ -33,7 +29,8 @@ typedef struct {
 typedef struct {
     uint32_t head;
     uint32_t tail;
-    CANQueueItem_t items[CAN_QUEUE_SIZE];
+    uint32_t size;
+    CANQueueItem_t *items;
 } CANQueue_t;
 
 //###############################################################################################
@@ -52,8 +49,9 @@ extern CANQueue_t groundToSatelliteQueue;
  *
  * PARAMETERS:
  *  queue: The CAN message queue.
+ *  size: The size of the queue.
  */
-void CAN_Queue_Init(CANQueue_t* queue);
+void CAN_Queue_Init(CANQueue_t* queue, uint32_t size);
 
 /*
  * FUNCTION: CAN_Queue_IsEmpty
@@ -93,8 +91,8 @@ bool CAN_Queue_Enqueue(CANQueue_t* queue, CANMessage_t* message);
  *
  * PARAMETERS:
  *  queue: The CAN message queue.
- *  message: The CAN message.
+ *  messageBuffer: The CAN message.
  */
-bool CAN_Queue_Dequeue(CANQueue_t* queue, CANMessage_t* message);
+bool CAN_Queue_Dequeue(CANQueue_t* queue, CANMessage_t* messageBuffer);
 
 #endif /* INCLUDE_CAN_MESSAGE_QUEUE_H_ */

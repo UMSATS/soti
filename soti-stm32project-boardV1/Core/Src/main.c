@@ -103,15 +103,14 @@ int main(void)
   MX_USART3_UART_Init();
   MX_I2C3_Init();
   /* USER CODE BEGIN 2 */
-  CAN_Queue_Init(&satelliteToGroundQueue);
-  CAN_Queue_Init(&groundToSatelliteQueue);
+  LCD_INIT();
+  char *str = "WELCOME TO SOTI!";
+  LCD_PRINT_STR(str, 0);
+  CAN_Queue_Init(&satelliteToGroundQueue, 13000);
+  CAN_Queue_Init(&groundToSatelliteQueue, 1000);
   HAL_UART_Receive_IT(&huart3, canRxData, sizeof(canRxData));
   CAN_Init();
   LEDs_Init();
-  LCD_INIT();
-
-  char *str = "WELCOME TO SOTI!";
-  LCD_PRINT_STR(str, 0);
   /* USER CODE END 2 */
 
   /* Infinite loop */
