@@ -373,7 +373,11 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1)
   operation_status = CAN_Message_Received();
   if (operation_status != HAL_OK)
   {
-    //TODO: Implement error handling using the LCD character display
+    char *str1 = "ERROR:";
+    char *str2 = "CAN RX";
+    LCD_CLEAR_DISPLAY();
+    LCD_PRINT_STR(str1, 0);
+    LCD_PRINT_STR(str2, 16);
   }
 }
 

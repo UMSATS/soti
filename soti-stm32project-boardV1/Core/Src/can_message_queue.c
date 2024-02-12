@@ -16,6 +16,7 @@
 #include <stdbool.h>
 #include "can.h"
 #include "can_message_queue.h"
+#include "LCD_C0216CiZ_driver.h"
 
 //###############################################################################################
 //Public Functions
@@ -35,8 +36,11 @@ bool CAN_Queue_IsFull(const CANQueue_t* queue) {
 
 bool CAN_Queue_Enqueue(CANQueue_t* queue, CANMessage_t* message) {
     if (CAN_Queue_IsFull(queue)) {
-        //TODO: Display full message on LCD
-
+        char *str1 = "ERROR:";
+        char *str2 = "QUEUE FULL";
+        LCD_CLEAR_DISPLAY();
+        LCD_PRINT_STR(str1, 0);
+        LCD_PRINT_STR(str2, 16);
         return false;
     }
 
