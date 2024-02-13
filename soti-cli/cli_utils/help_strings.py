@@ -30,11 +30,17 @@ Available commands:
 0x40 STM32 reset (CDH)
 0x41 flash storage unit test
 0x42 mram unit test
-0x43 antenna spam deploy
-0x44 take picture
-0x45 send ufh beacon
-0x46 get cdh task list
-0x47 sample time tagged task
+0x43 antenna spam deploy 1
+0x44 antenna spam deploy 2
+0x45 take picture
+0x46 send ufh beacon
+0x47 get cdh task list
+0x48 sample time tagged task
+0x49 set internal rtc
+0x4A get internal rtc
+0x50 PLD error report
+0x51 ADCS error report
+0x52 PWR error report
 
 === PLD ===
 0xA0 STM32 reset (PLD)
