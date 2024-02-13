@@ -1,11 +1,8 @@
 # create functions to print out commands' args in appropriate json format,
 # then map each one with its corresponding command
 
-from .constants import COMM_INFO
-
 def parse_01(args, output):
     output["acknowledged-command"] = f"0x{args[:2]}"
-    # Data is stored as a list so that camera data can be easily processed.
     output["reply-data"] = [f"0x{args[i:i+2]}" for i in range(2, 14, 2)]
     return output
 
@@ -55,7 +52,7 @@ Parse all other packets.
 """
 def parse_generic(args, output):
     output["command"] = f"0x{args[:2]}"
-    output["arguments"] = f"0x{args[2:]}"
+    output["arguments"] = [f"0x{args[i:i+2]}" for i in range(2, 16, 2)]
     return output
 
 parsers = {

@@ -1,10 +1,13 @@
-# hexadecimal int type
-def hexint(x):
-    return int(x, 16)
-
-# message constants
+# files
 MSG_HISTORY_FILENAME = "messages.json"
+CAMERA_DATA_FILENAME = "camera_data.txt"
+CAMERA_IMAGE_FILENAME = "sat_image.jpeg"
+
+# message size
 MSG_SIZE = 11
+
+# soti CAN message sender id
+SOTI_SENDER_ID = 0x1
 
 # constants for command codes & priorities
 COMM_INFO = {
