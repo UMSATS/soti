@@ -113,12 +113,15 @@ class Soti_CLI(cmd.Cmd):
 
     # clear the json message history file
     def do_clearj(self, line):
-        open(MSG_HISTORY_FILENAME, 'w').close()
+        with open(MSG_HISTORY_FILENAME, 'w') as history:
+            history.write("[]")
+            history.flush()
         print("The json message history file has been cleared.\n")
 
     # clear the txt camera data file
     def do_clearc(self, line):
-        open(CAMERA_DATA_FILENAME, 'w').close()
+        with open(CAMERA_DATA_FILENAME, "w") as camera_data:
+            camera_data.flush()
         print("The txt camera data file has been cleared.\n")
     
     # display the help string
@@ -188,8 +191,6 @@ def serial_handler(in_msg_queue, out_msg_queue, soti_port):
  
 # gets messages from the incoming queue and parses them
 def parser(in_msg_queue):
-    with open(MSG_HISTORY_FILENAME) as history:
-        history_json = json.load(history)
     with open(CAMERA_DATA_FILENAME, "w") as camera_data:
         while True:
             new_msg_raw = in_msg_queue.get()
@@ -200,7 +201,9 @@ def parser(in_msg_queue):
                 camera_data.flush()
             else:
                 new_msg_json = parse(new_msg_raw)
-                print(f"Message Parsed: {new_msg_json}")    
+                print(f"Message Parsed: {new_msg_json}")
+                with open(MSG_HISTORY_FILENAME) as history:
+                    history_json = json.load(history)
                 history_json.append(new_msg_json)
                 with open(MSG_HISTORY_FILENAME, 'w') as history:
                     json.dump(history_json, history, indent=4)
@@ -234,6 +237,7 @@ def extract():
     # build the camera data dictionary
     with open(CAMERA_DATA_FILENAME, "r") as input_file:
         for line in input_file:
+            line = line.strip('\x00')
             index = int(line[10:14], 16)
             if index not in camera_data_dict:
                 camera_data_dict[index] = line[14:].strip()
