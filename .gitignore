@@ -4,11 +4,10 @@ soti-stm32project-nucleo/Debug/
 soti-stm32project-boardV1/.settings/
 soti-stm32project-boardV1/Debug/
 __pycache__
-cli
 *.DS_Store
 messages.json
 soti-cli/messages.json
 camera_data.txt
 soti-cli/camera_data.txt
-sat_image.jpeg
-soti-cli/sat_image.jpeg
+sat_image*
+soti-cli/sat_image*
