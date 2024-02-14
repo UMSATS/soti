@@ -14,6 +14,11 @@ To run the program, run `python3 .\soti.py` or `python .\soti.py`.
 
 No arguments are required.
 
+## Linux & MacOS instructions
+Accessing the serial port is sometimes restricted to the super user.
+
+Therefore, to run the program, run `sudo python3 .\soti.py` or `sudo python .\soti.py`.
+
 ## Specify port
 The CLI will prompt you to enter a serial port to read to and write from.
 
