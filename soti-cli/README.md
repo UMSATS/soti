@@ -5,8 +5,7 @@ Please install Python 3.8.6 or later. For the CLI to work correctly, the command
 
 Please install the module [PySerial](https://pyserial.readthedocs.io/en/latest/index.html).
 
-`pip install serial`
-`pip install pyserial`
+`pip install serial` & `pip install pyserial`
 
 More detailed installation instructions [here](https://github.com/pyserial/pyserial#installation).
 
