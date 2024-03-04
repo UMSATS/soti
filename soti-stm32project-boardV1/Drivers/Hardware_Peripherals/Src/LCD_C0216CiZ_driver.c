@@ -55,6 +55,7 @@ void LCD_PRINT_STR(char * str, uint8_t position){
 
 void LCD_CLEAR_DISPLAY(void){
 	LCD_SEND(LCD_CONTROL_CMD, LCD_ADDR, LCD_CLEAR);
+	LCD_SET_CURSOR(0);
 }
 
 void LCD_INIT(void){
