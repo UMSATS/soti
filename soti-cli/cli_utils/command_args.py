@@ -62,9 +62,6 @@ def parse_43(args, output):
 def parse_44(args, output):
     return output
 
-def parse_45(args, output):
-    return output
-
 def parse_46(args, output):
     return output
 
@@ -116,7 +113,6 @@ parsers = {
     0x42: parse_42,
     0x43: parse_43,
     0x44: parse_44,
-    0x45: parse_45,
     0x46: parse_46,
     0x47: parse_47,
     0x48: parse_48,
