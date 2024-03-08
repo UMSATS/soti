@@ -16,31 +16,16 @@ Available commands:
 === Common ===
 0x01 ack
 0x02 nack
-0x10 shutdown
 
 === CDH ===
-0x20 heartbeat
-0x30 process battery charge
-0x31 process battery temperature
-0x32 process satellite current consumption
 0x33 process algae well light level
 0x34 process algae well temperature
-0x35 process rotation vector 1
-0x36 process rotation vector 2
 0x40 STM32 reset (CDH)
 0x41 flash storage unit test
 0x42 mram unit test
 0x43 antenna spam deploy 1
 0x44 antenna spam deploy 2
 0x45 take picture
-0x46 send ufh beacon
-0x47 get cdh task list
-0x48 sample time tagged task
-0x49 set internal rtc
-0x4A get internal rtc
-0x50 PLD error report
-0x51 ADCS error report
-0x52 PWR error report
 
 === PLD ===
 0xA0 STM32 reset (PLD)
@@ -65,16 +50,4 @@ Available commands:
 0xBA magnetorquer 1 reverse
 0xBB magnetorquer 2 reverse
 0xBC magnetorquer 3 reverse
-
-=== PWR ===
-0xC0 STM32 reset (PWR)
-0xC1 pld on
-0xC2 pld off
-0xC3 acds on
-0xC4 acds off
-0xC5 battery access on
-0xC6 battery access off
-0xC7 battery heater on
-0xC8 battery heater off
-0xC9 check converter status
 """
