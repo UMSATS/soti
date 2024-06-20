@@ -18,24 +18,6 @@ def parse_34(args, output):
     output["temperature"] = int(f"0x{args[4:8]}", 16)
     return output
 
-def parse_40(args, output):
-    return output
-
-def parse_41(args, output):
-    return output
-
-def parse_42(args, output):
-    return output
-
-def parse_43(args, output):
-    return output
-
-def parse_44(args, output):
-    return output
-
-def parse_45(args, output):
-    return output
-
 """
 Parse all other packets.
 """
@@ -48,10 +30,4 @@ parsers = {
     0x01: parse_01,
     0x33: parse_33,
     0x34: parse_34,
-    0x40: parse_40,
-    0x41: parse_41,
-    0x42: parse_42,
-    0x43: parse_43,
-    0x44: parse_44,
-    0x45: parse_45,
 }

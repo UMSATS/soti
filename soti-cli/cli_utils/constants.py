@@ -13,7 +13,7 @@ SOTI_SENDER_ID = 0x1
 COMM_INFO = {
     # common commands
     0x01: {"priority": None, "dest": None, "name": "ack"},         # ack - priority depends on argument
-    0x02: {"priority": None, "dest": None, "name": "nack"},         # nack - priority depends on argument
+    0x02: {"priority": None, "dest": None, "name": "nack"},        # nack - priority depends on argument
 
     # CDH commands
     0x33: {"priority": 0b0011111, "dest": 0x1, "name": "process algae well light level"},
@@ -24,6 +24,10 @@ COMM_INFO = {
     0x43: {"priority": 0b0000000, "dest": 0x1, "name": "antenna/SPAM deploy 1"},
     0x44: {"priority": 0b0000000, "dest": 0x1, "name": "antenna/SPAM deploy 2"},
     0x45: {"priority": 0b0000111, "dest": 0x1, "name": "take picture"},
+    0x47: {"priority": 0b0111111, "dest": 0x1, "name": "get number of tasks"},
+    0x48: {"priority": 0b0000111, "dest": 0x1, "name": "sample time-tagged task"},
+    0x49: {"priority": 0b0000111, "dest": 0x1, "name": "set RTC"},
+    0x4A: {"priority": 0b0111111, "dest": 0x1, "name": "get RTC"},
 
     # PLD commands
     0xA0: {"priority": 0b0000000, "dest": 0x3, "name": "STM32 reset (PLD)"},

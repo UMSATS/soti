@@ -26,6 +26,10 @@ Available commands:
 0x43 antenna spam deploy 1
 0x44 antenna spam deploy 2
 0x45 take picture
+0x47 get number of tasks
+0x48 sample time-tagged task
+0x49 set RTC
+0x4A get RTC
 
 === PLD ===
 0xA0 STM32 reset (PLD)
