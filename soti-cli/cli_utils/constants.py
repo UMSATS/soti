@@ -1,7 +1,5 @@
 # files
 MSG_HISTORY_FILENAME = "messages.json"
-CAMERA_DATA_FILENAME = "camera_data.txt"
-CAMERA_IMAGE_FILENAME = "sat_image.jpeg"
 
 # message size
 MSG_SIZE = 11
@@ -28,10 +26,9 @@ COMM_INFO = {
     0x40: {"priority": 0b0000000, "dest": 0x1, "name": "STM32 reset (CDH)"},
     0x41: {"priority": 0b0111111, "dest": 0x1, "name": "flash storage unit test"},
     0x42: {"priority": 0b0111111, "dest": 0x1, "name": "mram unit test"},
-    0x43: {"priority": 0b0000000, "dest": 0x1, "name": "antenna/SPAM deploy 1"},
-    0x44: {"priority": 0b0000000, "dest": 0x1, "name": "antenna/SPAM deploy 2"},
-    0x45: {"priority": 0b0000111, "dest": 0x1, "name": "take picture"},
-    0x46: {"priority": 0b0000111, "dest": 0x1, "name": "send UFH beacon"},
+    0x43: {"priority": 0b0000000, "dest": 0x1, "name": "antenna deploy 1"},
+    0x44: {"priority": 0b0000000, "dest": 0x1, "name": "antenna deploy 2"},
+    0x46: {"priority": 0b0000111, "dest": 0x1, "name": "send UHF beacon"},
     0x47: {"priority": 0b0000111, "dest": 0x1, "name": "get CDH task list"},
     0x48: {"priority": 0b0000111, "dest": 0x1, "name": "sample time-tagged task"},
     0x49: {"priority": 0b0000111, "dest": 0x1, "name": "set internal rtc"},

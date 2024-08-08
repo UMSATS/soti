@@ -2,9 +2,7 @@
 help_message = """
 send: sends a command to the satellite (input is hexadecimal, ex. 0xA1)
 query: queries the satellite's message history for information
-extract: extracts the jpeg image from the txt camera data file
-clearj: clears the json message history file
-clearc: clears the txt camera data file
+clear: clears the json message history file
 help: displays this message
 list: lists the available commands for each subsystem
 exit: exits the program
@@ -30,10 +28,9 @@ Available commands:
 0x40 STM32 reset (CDH)
 0x41 flash storage unit test
 0x42 mram unit test
-0x43 antenna spam deploy 1
-0x44 antenna spam deploy 2
-0x45 take picture
-0x46 send ufh beacon
+0x43 antenna deploy 1
+0x44 antenna deploy 2
+0x46 send uhf beacon
 0x47 get cdh task list
 0x48 sample time tagged task
 0x49 set internal rtc

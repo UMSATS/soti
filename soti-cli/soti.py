@@ -39,8 +39,6 @@ from cli_utils import help_strings
 from cli_utils.command_args import parsers, parse_generic
 from cli_utils.constants import (
     MSG_HISTORY_FILENAME,
-    CAMERA_DATA_FILENAME,
-    CAMERA_IMAGE_FILENAME,
     MSG_SIZE,
     SOTI_SENDER_ID,
     COMM_INFO,
@@ -57,7 +55,7 @@ class Soti_CLI(cmd.Cmd):
     # initialize the object
     def __init__(self, out_msg_queue):
         super().__init__()
-        self.intro = "\nAvailable commands:\nsend\nquery\nextract\nclearj\nclearc\nhelp\nlist\nexit\n"
+        self.intro = "\nAvailable commands:\nsend\nquery\nclear\nhelp\nlist\nexit\n"
         self.prompt = ">> "
         self.out_msg_queue = out_msg_queue
 
@@ -107,22 +105,12 @@ class Soti_CLI(cmd.Cmd):
 
         print("\nFound {} results.\n".format(num_results))
 
-    # extract the jpeg image from the txt camera data
-    def do_extract(self, line):
-        extract()
-
     # clear the json message history file
-    def do_clearj(self, line):
+    def do_clear(self, line):
         with open(MSG_HISTORY_FILENAME, 'w') as history:
             history.write("[]")
             history.flush()
         print("The json message history file has been cleared.\n")
-
-    # clear the txt camera data file
-    def do_clearc(self, line):
-        with open(CAMERA_DATA_FILENAME, "w") as camera_data:
-            camera_data.flush()
-        print("The txt camera data file has been cleared.\n")
     
     # display the help string
     def do_help(self, line):
@@ -174,8 +162,7 @@ def serial_handler(in_msg_queue, out_msg_queue, soti_port):
                 # block and read indefinitely, reading messages 11 bytes at a time
                 new_msg = ser.read(MSG_SIZE)
                 new_msg_hex = new_msg.hex()
-                if new_msg_hex[8:10] != "45": # don't print camera data
-                    print(f"New Message: 0x{new_msg_hex}")
+                print(f"New Message: 0x{new_msg_hex}")
                 in_msg_queue.put(new_msg)
 
             # check for outgoing messages
@@ -191,22 +178,15 @@ def serial_handler(in_msg_queue, out_msg_queue, soti_port):
  
 # gets messages from the incoming queue and parses them
 def parser(in_msg_queue):
-    with open(CAMERA_DATA_FILENAME, "w") as camera_data:
-        while True:
-            new_msg_raw = in_msg_queue.get()
-            new_msg_hex = new_msg_raw.hex()
-
-            if new_msg_hex[8:10] == "45": # if the new message is camera data
-                camera_data.write(new_msg_hex + "\n")
-                camera_data.flush()
-            else:
-                new_msg_json = parse(new_msg_raw)
-                print(f"Message Parsed: {new_msg_json}")
-                with open(MSG_HISTORY_FILENAME) as history:
-                    history_json = json.load(history)
-                history_json.append(new_msg_json)
-                with open(MSG_HISTORY_FILENAME, 'w') as history:
-                    json.dump(history_json, history, indent=4)
+    while True:
+        new_msg_raw = in_msg_queue.get()
+        new_msg_json = parse(new_msg_raw)
+        print(f"Message Parsed: {new_msg_json}")
+        with open(MSG_HISTORY_FILENAME) as history:
+            history_json = json.load(history)
+        history_json.append(new_msg_json)
+        with open(MSG_HISTORY_FILENAME, 'w') as history:
+            json.dump(history_json, history, indent=4)
 
 # parses a message
 def parse(msg_raw):
@@ -229,42 +209,6 @@ def parse(msg_raw):
         new_msg_json = parse_generic(msg[8:], new_msg_json)
 
     return new_msg_json
-
-# extract the jpeg image from the txt camera data
-def extract():
-    camera_data_dict = {}
-
-    # build the camera data dictionary
-    with open(CAMERA_DATA_FILENAME, "r") as input_file:
-        for line in input_file:
-            line = line.strip('\x00')
-            index = int(line[10:14], 16)
-            if index not in camera_data_dict:
-                camera_data_dict[index] = line[14:].strip()
-            else:
-                print("Duplicate camera message detected with index: " + index)
-    
-    if int("ffff", 16) not in camera_data_dict: # check if termination message was captured
-        print("Error: Camera data capture was incomplete.")
-        print("Unable to produce an image.")
-    else: # write the camera data to a file
-        camera_data_dict.pop(int("ffff", 16)) # remove the termination messsage
-        
-        image_index = 0
-        while os.path.exists(CAMERA_IMAGE_FILENAME[:9] + str(image_index) + CAMERA_IMAGE_FILENAME[9:]):
-            image_index += 1
-        
-        file_to_create = CAMERA_IMAGE_FILENAME[:9] + str(image_index) + CAMERA_IMAGE_FILENAME[9:]
-        with open(file_to_create, "wb") as output_file:
-            final_index = max(camera_data_dict)
-            for i in range(final_index + 1):
-                if i in camera_data_dict:
-                    data_bytes = bytes.fromhex(camera_data_dict[i])
-                    output_file.write(data_bytes)
-                else:
-                    print("Camera data package missing with index: " + str(i))
-
-        print("\nImage processing complete.\n")
 
 
 # ----------------------------------------------------------
