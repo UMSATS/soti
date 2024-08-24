@@ -75,7 +75,8 @@ void on_error_occured();
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 CANWrapper_InitTypeDef wc_init = {
-		.node_id = NODE_ADCS, // Which node ID should SOTI use?
+		// TODO: A function CANWrapper_Set_Node_ID() to change the node ID on the fly
+		.node_id = NODE_CDH,
 		.notify_of_acks = true,
 
 		.hcan = &hcan1,
@@ -85,7 +86,6 @@ CANWrapper_InitTypeDef wc_init = {
 		.error_callback = &on_error_occured
 };
 
-CANWrapper_Init(wc_init); // Error: conflicting types
 /* USER CODE END 0 */
 
 /**
@@ -128,6 +128,7 @@ int main(void)
   CAN_Queue_Init(&groundToSatelliteQueue, 1000);
   HAL_UART_Receive_IT(&huart3, canRxData, sizeof(canRxData));
   CAN_Init();
+  CANWrapper_Init(wc_init);
   LEDs_Init();
   /* USER CODE END 2 */
 
