@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include "can.h"
 #include "can_message_queue.h"
+#include "tuk/can_wrapper.h"
 #include "LEDs_driver.h"
 #include "LCD_C0216CiZ_driver.h"
 /* USER CODE END Includes */
@@ -67,11 +68,24 @@ static void MX_TIM16_Init(void);
 /* USER CODE BEGIN PFP */
 void serializeCANMessage( CANMessage_t* message, uint8_t* serializedData);
 void deserializeCANMessage( CANMessage_t* messageBuffer, const uint8_t* deserializedData);
+void on_message_receieved();
+void on_error_occured();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+CANWrapper_InitTypeDef wc_init = {
+		.node_id = NODE_ADCS, // Which node ID should SOTI use?
+		.notify_of_acks = true,
 
+		.hcan = &hcan1,
+		.htim = &htim16,
+
+		.message_callback = &on_message_receieved, // Temporary and empty functions
+		.error_callback = &on_error_occured
+};
+
+CANWrapper_Init(wc_init); // Error: conflicting types
 /* USER CODE END 0 */
 
 /**
@@ -396,6 +410,9 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void on_message_receieved() {}
+void on_error_occured() {}
+
 /**
   * @brief  Rx Fifo 0 message pending callback
   * @param  hcan: pointer to a CAN_HandleTypeDef structure that contains
