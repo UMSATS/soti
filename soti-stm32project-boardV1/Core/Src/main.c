@@ -52,7 +52,6 @@ TIM_HandleTypeDef htim16;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-CANQueue satelliteToGroundQueue;
 CANQueue groundToSatelliteQueue;
 uint8_t canRxData[11];
 /* USER CODE END PV */
@@ -123,7 +122,6 @@ int main(void)
   LCD_INIT();
   char *str = "WELCOME TO SOTI!";
   LCD_PRINT_STR(str, 0);
-  CANQueue satelliteToGroundQueue = CANQueue_Create(); // Size should be 13000
   CANQueue groundToSatelliteQueue = CANQueue_Create(); // Size should be 1000
   HAL_UART_Receive_IT(&huart3, canRxData, sizeof(canRxData));
   CANWrapper_Init(wc_init);
@@ -136,21 +134,6 @@ int main(void)
   {
   	CANWrapper_Poll_Messages();
   	CANWrapper_Poll_Errors();
-
-    if (!CANQueue_IsEmpty(&satelliteToGroundQueue))
-    {
-    	CANQueueItem receivedData;
-      uint8_t serializedData[11];
-
-      //getting message from the queue.
-      CANQueue_Dequeue(&satelliteToGroundQueue, &receivedData);
-
-      //serializing the CANMessage to transfer over UART.
-      CANMessage message = receivedData.msg;
-      serializeCANMessage(&message, serializedData);
-      //transferring data over UART.
-      HAL_UART_Transmit(&huart3, serializedData, sizeof(serializedData), HAL_MAX_DELAY);
-    }
 
     if (!CANQueue_IsEmpty(&groundToSatelliteQueue))
     {
@@ -420,9 +403,13 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void on_message_received(CANMessage msg)
 {
-	CANQueueItem queued_msg;
-	queued_msg.msg = msg;
-	CANQueue_Enqueue(&satelliteToGroundQueue, queued_msg);
+	CANMessage message = msg;
+	uint8_t serializedData[11];
+
+	//serializing the CANMessage to transfer over UART.
+	serializeCANMessage(&message, serializedData);
+	//transferring data over UART.
+	HAL_UART_Transmit(&huart3, serializedData, sizeof(serializedData), HAL_MAX_DELAY);
 }
 
 void on_error_occured(CANWrapper_ErrorInfo error)
