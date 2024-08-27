@@ -137,15 +137,13 @@ int main(void)
 
     if (!CANQueue_IsEmpty(&groundToSatelliteQueue))
     {
-    	CANQueueItem receivedData;
-    	// Temporary until TUK implements CANWrapper_Set_Node_ID()
-    	NodeID recipient = NODE_ADCS;
-
       //getting message from the queue.
+    	CANQueueItem receivedData;
       CANQueue_Dequeue(&groundToSatelliteQueue, &receivedData);
 
       //transferring data over CAN.
       CANMessage message = receivedData.msg;
+      NodeID recipient = receivedData.msg.recipient;
       CANWrapper_Transmit(recipient, &message);
     }
     /* USER CODE END WHILE */
