@@ -436,7 +436,7 @@ void serializeCANMessage(CANMessage* message, uint8_t* serializedData)
   serializedData[2] = message->recipient;
   serializedData[3] = message->cmd;
 
-  for (int i = 0; i < 7; i++)
+  for (int i = 0; i < CAN_MAX_BODY_SIZE; i++)
   {
     serializedData[4 + i] = message->body[i];
   }
@@ -449,7 +449,7 @@ void deserializeCANMessage(CANMessage* message, const uint8_t* deserializedData)
 	message->recipient = deserializedData[2];
 	message->cmd = deserializedData[3];
 
-  for (int i = 0; i < 7; i++)
+  for (int i = 0; i < CAN_MAX_BODY_SIZE; i++)
   {
   	message->body[i] = deserializedData[4 + i];
   }
