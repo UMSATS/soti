@@ -122,7 +122,7 @@ int main(void)
   LCD_INIT();
   char *str = "WELCOME TO SOTI!";
   LCD_PRINT_STR(str, 0);
-  CANQueue groundToSatelliteQueue = CANQueue_Create(); // Size should be 1000
+  CANQueue groundToSatelliteQueue = CANQueue_Create();
   HAL_UART_Receive_IT(&huart3, canRxData, sizeof(canRxData));
   CANWrapper_Init(wc_init);
   LEDs_Init();
@@ -138,7 +138,7 @@ int main(void)
     if (!CANQueue_IsEmpty(&groundToSatelliteQueue))
     {
     	CANQueueItem receivedData;
-    	// Temporary until we can use CANWrapper_Set_Node_ID()
+    	// Temporary until TUK implements CANWrapper_Set_Node_ID()
     	NodeID recipient = NODE_ADCS;
 
       //getting message from the queue.
@@ -426,10 +426,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	CANMessage message;
   deserializeCANMessage(&message, canRxData);
 
-  CANQueueItem queued_msg;
-  queued_msg.msg = message;
-
-  CANQueue_Enqueue(&groundToSatelliteQueue, queued_msg);
+  CANQueue_Enqueue(&groundToSatelliteQueue, (CANQueueItem){ .msg = message });
 
   HAL_UART_Receive_IT(&huart3, canRxData, sizeof(canRxData));
 }
