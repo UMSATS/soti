@@ -21,8 +21,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "can.h"
-#include "can_message_queue.h"
+#include "tuk/can_wrapper.h"
+#include "tuk/can_wrapper/can_queue.h"
 #include "LEDs_driver.h"
 #include "LCD_C0216CiZ_driver.h"
 /* USER CODE END Includes */
@@ -52,8 +52,7 @@ TIM_HandleTypeDef htim16;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-CANQueue_t satelliteToGroundQueue;
-CANQueue_t groundToSatelliteQueue;
+CANQueue groundToSatelliteQueue;
 uint8_t canRxData[11];
 /* USER CODE END PV */
 
@@ -65,12 +64,25 @@ static void MX_USART3_UART_Init(void);
 static void MX_I2C3_Init(void);
 static void MX_TIM16_Init(void);
 /* USER CODE BEGIN PFP */
-void serializeCANMessage( CANMessage_t* message, uint8_t* serializedData);
-void deserializeCANMessage( CANMessage_t* messageBuffer, const uint8_t* deserializedData);
+void serializeCANMessage(CANMessage* message, uint8_t* serializedData);
+void deserializeCANMessage(CANMessage* message, const uint8_t* deserializedData);
+void on_message_received(CANMessage msg);
+void on_error_occured(CANWrapper_ErrorInfo error);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+CANWrapper_InitTypeDef wc_init = {
+		// TODO: Use CANWrapper_Set_Node_ID() to change node on the fly
+		.node_id = NODE_CDH,
+		.notify_of_acks = true,
+
+		.hcan = &hcan1,
+		.htim = &htim16,
+
+		.message_callback = &on_message_received,
+		.error_callback = &on_error_occured
+};
 
 /* USER CODE END 0 */
 
@@ -110,10 +122,9 @@ int main(void)
   LCD_INIT();
   char *str = "WELCOME TO SOTI!";
   LCD_PRINT_STR(str, 0);
-  CAN_Queue_Init(&satelliteToGroundQueue, 13000);
-  CAN_Queue_Init(&groundToSatelliteQueue, 1000);
+  CANQueue groundToSatelliteQueue = CANQueue_Create();
   HAL_UART_Receive_IT(&huart3, canRxData, sizeof(canRxData));
-  CAN_Init();
+  CANWrapper_Init(wc_init);
   LEDs_Init();
   /* USER CODE END 2 */
 
@@ -121,27 +132,19 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    if (!CAN_Queue_IsEmpty(&satelliteToGroundQueue))
+  	CANWrapper_Poll_Messages();
+  	CANWrapper_Poll_Errors();
+
+    if (!CANQueue_IsEmpty(&groundToSatelliteQueue))
     {
-      CANMessage_t receivedData;
-      uint8_t serializedData[11];
-
       //getting message from the queue.
-      CAN_Queue_Dequeue(&satelliteToGroundQueue, &receivedData);
-      //serializing the CanMessage_t to transfer over UART.
-      serializeCANMessage(&receivedData, serializedData);
-      //transferring data over UART.
-      HAL_UART_Transmit(&huart3, serializedData, sizeof(serializedData), HAL_MAX_DELAY);
-    }
+    	CANQueueItem receivedData;
+      CANQueue_Dequeue(&groundToSatelliteQueue, &receivedData);
 
-    if (!CAN_Queue_IsEmpty(&groundToSatelliteQueue))
-    {
-      CANMessage_t receivedData;
-
-      //getting message from the queue.
-      CAN_Queue_Dequeue(&groundToSatelliteQueue, &receivedData);
       //transferring data over CAN.
-      CAN_Transmit_Message(receivedData);
+      CANMessage message = receivedData.msg;
+      NodeID recipient = receivedData.msg.recipient;
+      CANWrapper_Transmit(recipient, &message);
     }
     /* USER CODE END WHILE */
 
@@ -396,60 +399,59 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-/**
-  * @brief  Rx Fifo 0 message pending callback
-  * @param  hcan: pointer to a CAN_HandleTypeDef structure that contains
-  *         the configuration information for the specified CAN.
-  * @retval None
-  */
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1)
+void on_message_received(CANMessage msg)
 {
-  HAL_StatusTypeDef operation_status;
-  operation_status = CAN_Message_Received();
-  if (operation_status != HAL_OK)
-  {
-    char *str1 = "ERROR:";
-    char *str2 = "CAN RX";
-    LCD_CLEAR_DISPLAY();
-    LCD_PRINT_STR(str1, 0);
-    LCD_PRINT_STR(str2, 16);
-  }
+	CANMessage message = msg;
+	uint8_t serializedData[11];
+
+	//serializing the CANMessage to transfer over UART.
+	serializeCANMessage(&message, serializedData);
+	//transferring data over UART.
+	HAL_UART_Transmit(&huart3, serializedData, sizeof(serializedData), HAL_MAX_DELAY);
+}
+
+void on_error_occured(CANWrapper_ErrorInfo error)
+{
+	char *str1 = "ERROR:";
+	char *str2 = "CAN RX";
+	LCD_CLEAR_DISPLAY();
+	LCD_PRINT_STR(str1, 0);
+	LCD_PRINT_STR(str2, 16);
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-  CANMessage_t message;
-
+	CANMessage message;
   deserializeCANMessage(&message, canRxData);
 
-  CAN_Queue_Enqueue(&groundToSatelliteQueue, &message);
+  CANQueue_Enqueue(&groundToSatelliteQueue, (CANQueueItem){ .msg = message });
 
   HAL_UART_Receive_IT(&huart3, canRxData, sizeof(canRxData));
 }
 
-void serializeCANMessage(CANMessage_t* message, uint8_t* serializedData)
+void serializeCANMessage(CANMessage* message, uint8_t* serializedData)
 {
   serializedData[0] = message->priority;
-  serializedData[1] = message->SenderID;
-  serializedData[2] = message->DestinationID;
-  serializedData[3] = message->command;
+  serializedData[1] = message->sender;
+  serializedData[2] = message->recipient;
+  serializedData[3] = message->cmd;
 
-  for (int i = 0; i < 7; i++)
+  for (int i = 0; i < CAN_MAX_BODY_SIZE; i++)
   {
-    serializedData[4 + i] = message->data[i];
+    serializedData[4 + i] = message->body[i];
   }
 }
 
-void deserializeCANMessage(CANMessage_t* messageBuffer, const uint8_t* deserializedData)
+void deserializeCANMessage(CANMessage* message, const uint8_t* deserializedData)
 {
-  messageBuffer->priority = deserializedData[0];
-  messageBuffer->SenderID = deserializedData[1];
-  messageBuffer->DestinationID = deserializedData[2];
-  messageBuffer->command = deserializedData[3];
+	message->priority = deserializedData[0];
+	message->sender = deserializedData[1];
+	message->recipient = deserializedData[2];
+	message->cmd = deserializedData[3];
 
-  for (int i = 0; i < 7; i++)
+  for (int i = 0; i < CAN_MAX_BODY_SIZE; i++)
   {
-    messageBuffer->data[i] = deserializedData[4 + i];
+  	message->body[i] = deserializedData[4 + i];
   }
 }
 /* USER CODE END 4 */
