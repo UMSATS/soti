@@ -76,9 +76,9 @@ COMM_INFO = {
 
 # associates a sender id with a human-readable sender for message history
 SYSTEM_IDS = {
-    0x0: "PCU",
-    0x1: "CDH/Comms",
-    0x2: "ACDS",
+    0x0: "CDH/Comms",
+    0x1: "Power",
+    0x2: "ADCS",
     0x3: "Payload",
     0xFF: "SOTI",
 }
