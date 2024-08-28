@@ -1,3 +1,5 @@
+from enum import Enum
+
 # files
 MSG_HISTORY_FILENAME = "messages.json"
 
@@ -71,14 +73,12 @@ COMM_INFO = {
     0xC9: {"priority": 0b0000111, "dest": 0x0, "name": "check 3.3V DC-DC converter status"},
 }
 
-# associates a sender id with a human-readable sender for message history
-SYSTEM_IDS = {
-    0x0: "CDH/Comms",
-    0x1: "Power",
-    0x2: "ADCS",
-    0x3: "Payload",
-    0xFF: "SOTI",
-}
+# associates a subsystem id with a human-readable name for message history
+class NodeID(Enum):
+    CDH     = 0x0
+    Power   = 0x1
+    ADCS    = 0x2
+    Payload = 0x3
 
 # associates the "query" attributes with their command code
 # so they can be pulled out of the message history file

@@ -41,7 +41,7 @@ from cli_utils.constants import (
     MSG_HISTORY_FILENAME,
     MSG_SIZE,
     COMM_INFO,
-    SYSTEM_IDS,
+    NodeID,
     QUERY_ATTRS
 )
 
@@ -69,7 +69,7 @@ class Soti_CLI(cmd.Cmd):
         priority = COMM_INFO[code]["priority"]
         dest_id = COMM_INFO[code]["dest"]
 
-        print(f"\nCommand: {COMM_INFO[code]['name']}\nDestination: {SYSTEM_IDS[dest_id]}")
+        print(f"\nCommand: {COMM_INFO[code]['name']}\nDestination: {NodeID(dest_id).name}")
 
         buffer = bytearray([priority, self.senderID, dest_id, code, 0, 0, 0, 0, 0, 0, 0])
 
@@ -93,9 +93,9 @@ class Soti_CLI(cmd.Cmd):
     def do_setid(self, line):
         try:
             id = int(line, 0)
-            if id in SYSTEM_IDS:
+            if id in NodeID._value2member_map_:
                 self.senderID = id
-                print("Updated sender ID to {}.".format(SYSTEM_IDS[id]))
+                print("Updated sender ID to {}.".format(NodeID(id).name))
             else:
                 print("Invalid sender ID.")
         except ValueError:
@@ -208,8 +208,8 @@ def parse(msg_raw):
     new_msg_json = {
         "time": datetime.datetime.now().strftime("%T"),
         "priority": int(f"0x{msg[2:4]}", 16),
-        "sender-id": SYSTEM_IDS[int(f"0x{msg[4:6]}", 16)],
-        "destination-id": SYSTEM_IDS[int(f"0x{msg[6:8]}", 16)],
+        "sender-id": NodeID(int(f"0x{msg[4:6]}", 16)).name,
+        "destination-id": NodeID(int(f"0x{msg[6:8]}", 16)).name,
         "type": QUERY_ATTRS.get(comm_code) or "other-message",
         # the remaining attributes are command-specific,
         # and handled on case-by-case basis
