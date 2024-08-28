@@ -40,7 +40,6 @@ from cli_utils.command_args import parsers, parse_generic
 from cli_utils.constants import (
     MSG_HISTORY_FILENAME,
     MSG_SIZE,
-    SOTI_SENDER_ID,
     COMM_INFO,
     SYSTEM_IDS,
     QUERY_ATTRS
