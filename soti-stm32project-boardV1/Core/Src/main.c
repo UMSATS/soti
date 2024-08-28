@@ -53,6 +53,7 @@ UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 CANQueue groundToSatelliteQueue;
+NodeID senderID;
 uint8_t canRxData[11];
 /* USER CODE END PV */
 
@@ -83,7 +84,6 @@ CANWrapper_InitTypeDef wc_init = {
 		.message_callback = &on_message_received,
 		.error_callback = &on_error_occured
 };
-
 /* USER CODE END 0 */
 
 /**
@@ -125,6 +125,7 @@ int main(void)
   CANQueue groundToSatelliteQueue = CANQueue_Create();
   HAL_UART_Receive_IT(&huart3, canRxData, sizeof(canRxData));
   CANWrapper_Init(wc_init);
+  senderID = wc_init.node_id;
   LEDs_Init();
   /* USER CODE END 2 */
 
@@ -141,9 +142,18 @@ int main(void)
     	CANQueueItem receivedData;
       CANQueue_Dequeue(&groundToSatelliteQueue, &receivedData);
 
-      //transferring data over CAN.
       CANMessage message = receivedData.msg;
-      NodeID recipient = receivedData.msg.recipient;
+
+      //update the sender ID
+      if (message.sender != senderID)
+      {
+      	senderID = message.sender;
+      	CANWrapper_Set_Node_ID(senderID);
+      }
+
+      NodeID recipient = message.recipient;
+
+      //transferring data over CAN.
       CANWrapper_Transmit(recipient, &message);
     }
     /* USER CODE END WHILE */
