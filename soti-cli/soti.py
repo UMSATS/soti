@@ -55,9 +55,10 @@ class Soti_CLI(cmd.Cmd):
     # initialize the object
     def __init__(self, out_msg_queue):
         super().__init__()
-        self.intro = "\nAvailable commands:\nsend\nquery\nclear\nhelp\nlist\nexit\n"
+        self.intro = "\nAvailable commands:\nsend\nsetid\nquery\nclear\nhelp\nlist\nexit\n"
         self.prompt = ">> "
         self.out_msg_queue = out_msg_queue
+        self.senderID = 0x0
 
     # send a command
     def do_send(self, line):
@@ -71,7 +72,7 @@ class Soti_CLI(cmd.Cmd):
 
         print(f"\nCommand: {COMM_INFO[code]['name']}\nDestination: {SYSTEM_IDS[dest_id]}")
 
-        buffer = bytearray([priority, SOTI_SENDER_ID, dest_id, code, 0, 0, 0, 0, 0, 0, 0])
+        buffer = bytearray([priority, self.senderID, dest_id, code, 0, 0, 0, 0, 0, 0, 0])
 
 		# split arguments (if any) into independent bytes
         input_args = line[4:]
@@ -88,6 +89,18 @@ class Soti_CLI(cmd.Cmd):
 
         # send the command + arguments to the serial handler to write to the serial device
         self.out_msg_queue.put(buffer)
+
+    # change the sender ID
+    def do_setid(self, line):
+        try:
+            id = int(line, 0)
+            if id in SYSTEM_IDS:
+                self.senderID = id
+                print("Updated sender ID to {}.".format(SYSTEM_IDS[id]))
+            else:
+                print("Invalid sender ID.")
+        except ValueError:
+            print("Invalid args.")
 
     # query the telemetry
     def do_query(self, line):

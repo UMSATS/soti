@@ -4,9 +4,6 @@ MSG_HISTORY_FILENAME = "messages.json"
 # message size
 MSG_SIZE = 11
 
-# soti CAN message sender id
-SOTI_SENDER_ID = 0x1
-
 # constants for command codes & priorities
 COMM_INFO = {
     # common commands
