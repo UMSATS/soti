@@ -1,6 +1,7 @@
 # well-known help messages for commands
 help_message = """
 send: sends a command to the satellite (input is hexadecimal, ex. 0xA1)
+setid: sets the sender ID of sent commands
 query: queries the satellite's message history for information
 clear: clears the json message history file
 help: displays this message
