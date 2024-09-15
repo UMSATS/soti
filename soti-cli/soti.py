@@ -57,7 +57,7 @@ class Soti_CLI(cmd.Cmd):
         self.intro = "\nAvailable commands:\nsend\nsetid\nquery\nclear\nhelp\nlist\nexit\n"
         self.prompt = ">> "
         self.out_msg_queue = out_msg_queue
-        self.sender_id = 0x0
+        self.sender_id = NodeID.CDH
 
     # send a command
     def do_send(self, line):
@@ -67,11 +67,11 @@ class Soti_CLI(cmd.Cmd):
 
 		# now we can use the code to find its priority & destination id
         priority = COMM_INFO[code]["priority"]
-        dest_id = COMM_INFO[code]["dest"]
+        dest_id = NodeID(COMM_INFO[code]["dest"])
 
         print(f"\nCommand: {COMM_INFO[code]['name']}\nDestination: {NodeID(dest_id).name}")
 
-        buffer = bytearray([priority, self.sender_id, dest_id, code, 0, 0, 0, 0, 0, 0, 0])
+        buffer = bytearray([priority, self.sender_id.value, dest_id.value, code, 0, 0, 0, 0, 0, 0, 0])
 
 		# split arguments (if any) into independent bytes
         input_args = line[4:]
@@ -94,8 +94,8 @@ class Soti_CLI(cmd.Cmd):
         try:
             id = int(line, 0)
             if id in NodeID._value2member_map_:
-                self.sender_id = id
-                print("Updated sender ID to {}.".format(NodeID(id).name))
+                self.sender_id = NodeID(id)
+                print("Updated sender ID to {}.".format(self.sender_id.name))
             else:
                 print("Invalid sender ID.")
         except ValueError:
