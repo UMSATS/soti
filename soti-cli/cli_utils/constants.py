@@ -6,13 +6,84 @@ MSG_HISTORY_FILENAME = "messages.json"
 # message size
 MSG_SIZE = 11
 
-
 # associates a subsystem id with a human-readable name for message history
 class NodeID(Enum):
     CDH     = 0x0
     Power   = 0x1
     ADCS    = 0x2
     Payload = 0x3
+
+# command IDs copied from TSAT Utilities Kit's CmdID enum
+NUM_COMMANDS = 40
+class CmdID(Enum): (
+    ############################################
+	### COMMON
+	############################################
+	CMD_COMM_RESET,
+	CMD_COMM_PREPARE_FOR_SHUTDOWN,
+	CMD_COMM_GET_TELEMETRY,
+	CMD_COMM_SET_TELEMETRY_INTERVAL,
+	CMD_COMM_GET_TELEMETRY_INTERVAL,
+	CMD_COMM_UPDATE_START,
+	CMD_COMM_UPDATE_LOAD,
+	CMD_COMM_UPDATE_END,
+
+	############################################
+	### CDH
+	############################################
+	## Event Processing.
+	CMD_CDH_PROCESS_HEARTBEAT,
+	CMD_CDH_PROCESS_RUNTIME_ERROR,
+	CMD_CDH_PROCESS_COMMAND_ERROR,
+	CMD_CDH_PROCESS_NOTIFICATION,
+	CMD_CDH_PROCESS_TELEMETRY_REPORT,
+	CMD_CDH_PROCESS_RETURN,
+	CMD_CDH_PROCESS_LED_TEST,
+
+	## Clock
+	CMD_CDH_SET_RTC,
+	CMD_CDH_GET_RTC,
+
+	## Tests
+	CMD_CDH_TEST_FLASH,
+	CMD_CDH_TEST_MRAM,
+
+	CMD_CDH_RESET_SUBSYSTEM,
+
+	## Antenna
+	CMD_CDH_ENABLE_ANTENNA,
+	CMD_CDH_DEPLOY_ANTENNA,
+
+	############################################
+	### POWER
+	############################################
+	CMD_PWR_PROCESS_HEARTBEAT,
+	CMD_PWR_SET_SUBSYSTEM_POWER,
+	CMD_PWR_GET_SUBSYSTEM_POWER,
+	CMD_PWR_SET_BATTERY_HEATER_POWER,
+	CMD_PWR_GET_BATTERY_HEATER_POWER,
+	CMD_PWR_SET_BATTERY_ACCESS,
+	CMD_PWR_GET_BATTERY_ACCESS,
+
+	############################################
+	### ADCS
+	############################################
+	CMD_ADCS_SET_MAGNETORQUER_DIRECTION,
+	CMD_ADCS_GET_MAGNETORQUER_DIRECTION,
+	CMD_ADCS_SET_OPERATING_MODE,
+	CMD_ADCS_GET_OPERATING_MODE,
+
+	############################################
+	### PAYLOAD
+	############################################
+	CMD_PLD_SET_ACTIVE_ENVS,
+	CMD_PLD_GET_ACTIVE_ENVS,
+	CMD_PLD_SET_SETPOINT,
+	CMD_PLD_GET_SETPOINT,
+	CMD_PLD_SET_TOLERANCE,
+	CMD_PLD_GET_TOLERANCE,
+	CMD_PLD_TEST_LEDS
+) = range(NUM_COMMANDS)
 
 # constants for command codes & priorities
 COMM_INFO = {
