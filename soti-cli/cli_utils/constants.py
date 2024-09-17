@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, auto
 
 # files
 MSG_HISTORY_FILENAME = "messages.json"
@@ -14,76 +14,74 @@ class NodeID(Enum):
     Payload = 0x3
 
 # command IDs copied from TSAT Utilities Kit's CmdID enum
-NUM_COMMANDS = 40
-class CmdID(Enum): (
+class CmdID(Enum):
     ############################################
     ### COMMON
     ############################################
-    CMD_COMM_RESET,
-    CMD_COMM_PREPARE_FOR_SHUTDOWN,
-    CMD_COMM_GET_TELEMETRY,
-    CMD_COMM_SET_TELEMETRY_INTERVAL,
-    CMD_COMM_GET_TELEMETRY_INTERVAL,
-    CMD_COMM_UPDATE_START,
-    CMD_COMM_UPDATE_LOAD,
-    CMD_COMM_UPDATE_END,
+    CMD_COMM_RESET                      = 0
+    CMD_COMM_PREPARE_FOR_SHUTDOWN       = auto()
+    CMD_COMM_GET_TELEMETRY              = auto()
+    CMD_COMM_SET_TELEMETRY_INTERVAL     = auto()
+    CMD_COMM_GET_TELEMETRY_INTERVAL     = auto()
+    CMD_COMM_UPDATE_START               = auto()
+    CMD_COMM_UPDATE_LOAD                = auto()
+    CMD_COMM_UPDATE_END                 = auto()
 
     ############################################
     ### CDH
     ############################################
     ## Event Processing.
-    CMD_CDH_PROCESS_HEARTBEAT,
-    CMD_CDH_PROCESS_RUNTIME_ERROR,
-    CMD_CDH_PROCESS_COMMAND_ERROR,
-    CMD_CDH_PROCESS_NOTIFICATION,
-    CMD_CDH_PROCESS_TELEMETRY_REPORT,
-    CMD_CDH_PROCESS_RETURN,
-    CMD_CDH_PROCESS_LED_TEST,   
+    CMD_CDH_PROCESS_HEARTBEAT           = auto()
+    CMD_CDH_PROCESS_RUNTIME_ERROR       = auto()
+    CMD_CDH_PROCESS_COMMAND_ERROR       = auto()
+    CMD_CDH_PROCESS_NOTIFICATION        = auto()
+    CMD_CDH_PROCESS_TELEMETRY_REPORT    = auto()
+    CMD_CDH_PROCESS_RETURN              = auto()
+    CMD_CDH_PROCESS_LED_TEST            = auto()   
 
     ## Clock
-    CMD_CDH_SET_RTC,
-    CMD_CDH_GET_RTC,
+    CMD_CDH_SET_RTC                     = auto()
+    CMD_CDH_GET_RTC                     = auto()
 
     ## Tests
-    CMD_CDH_TEST_FLASH,
-    CMD_CDH_TEST_MRAM,
+    CMD_CDH_TEST_FLASH                  = auto()
+    CMD_CDH_TEST_MRAM                   = auto()
 
-    CMD_CDH_RESET_SUBSYSTEM,
+    CMD_CDH_RESET_SUBSYSTEM             = auto()
 
     ## Antenna
-    CMD_CDH_ENABLE_ANTENNA,
-    CMD_CDH_DEPLOY_ANTENNA,
+    CMD_CDH_ENABLE_ANTENNA              = auto()
+    CMD_CDH_DEPLOY_ANTENNA              = auto()
 
     ############################################
     ### POWER
     ############################################
-    CMD_PWR_PROCESS_HEARTBEAT,
-    CMD_PWR_SET_SUBSYSTEM_POWER,
-    CMD_PWR_GET_SUBSYSTEM_POWER,
-    CMD_PWR_SET_BATTERY_HEATER_POWER,
-    CMD_PWR_GET_BATTERY_HEATER_POWER,
-    CMD_PWR_SET_BATTERY_ACCESS,
-    CMD_PWR_GET_BATTERY_ACCESS,
+    CMD_PWR_PROCESS_HEARTBEAT           = auto()
+    CMD_PWR_SET_SUBSYSTEM_POWER         = auto()
+    CMD_PWR_GET_SUBSYSTEM_POWER         = auto()
+    CMD_PWR_SET_BATTERY_HEATER_POWER    = auto()
+    CMD_PWR_GET_BATTERY_HEATER_POWER    = auto()
+    CMD_PWR_SET_BATTERY_ACCESS          = auto()
+    CMD_PWR_GET_BATTERY_ACCESS          = auto()
 
     ############################################
     ### ADCS
     ############################################
-    CMD_ADCS_SET_MAGNETORQUER_DIRECTION,
-    CMD_ADCS_GET_MAGNETORQUER_DIRECTION,
-    CMD_ADCS_SET_OPERATING_MODE,
-    CMD_ADCS_GET_OPERATING_MODE,
+    CMD_ADCS_SET_MAGNETORQUER_DIRECTION = auto()
+    CMD_ADCS_GET_MAGNETORQUER_DIRECTION = auto()
+    CMD_ADCS_SET_OPERATING_MODE         = auto()
+    CMD_ADCS_GET_OPERATING_MODE         = auto()
 
     ############################################
     ### PAYLOAD
     ############################################
-    CMD_PLD_SET_ACTIVE_ENVS,
-    CMD_PLD_GET_ACTIVE_ENVS,
-    CMD_PLD_SET_SETPOINT,
-    CMD_PLD_GET_SETPOINT,
-    CMD_PLD_SET_TOLERANCE,
-    CMD_PLD_GET_TOLERANCE,
-    CMD_PLD_TEST_LEDS
-) = range(NUM_COMMANDS)
+    CMD_PLD_SET_ACTIVE_ENVS             = auto()
+    CMD_PLD_GET_ACTIVE_ENVS             = auto()
+    CMD_PLD_SET_SETPOINT                = auto()
+    CMD_PLD_GET_SETPOINT                = auto()
+    CMD_PLD_SET_TOLERANCE               = auto()
+    CMD_PLD_GET_TOLERANCE               = auto()
+    CMD_PLD_TEST_LEDS                   = auto()
 
 # constants for command codes & priorities
 COMM_INFO = {
