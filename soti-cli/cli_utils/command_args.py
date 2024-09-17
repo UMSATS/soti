@@ -1,4 +1,4 @@
-from constants import CmdID
+from cli_utils.constants import CmdID
 
 # adds command args to the output json
 def parse_args(args, output):
