@@ -112,88 +112,88 @@ COMM_INFO = {
     ############################################
     ## Event Processing.
     CmdID.CMD_CDH_PROCESS_HEARTBEAT.value:
-    {"priority": 2, "dest": None},
+    {"priority": 2, "dest": NodeID.CDH.value},
     CmdID.CMD_CDH_PROCESS_RUNTIME_ERROR.value: 
-    {"priority": 10, "dest": None},
+    {"priority": 10, "dest": NodeID.CDH.value},
     CmdID.CMD_CDH_PROCESS_COMMAND_ERROR.value: 
-    {"priority": 10, "dest": None},
+    {"priority": 10, "dest": NodeID.CDH.value},
     CmdID.CMD_CDH_PROCESS_NOTIFICATION.value: 
-    {"priority": 2, "dest": None},
+    {"priority": 2, "dest": NodeID.CDH.value},
     CmdID.CMD_CDH_PROCESS_TELEMETRY_REPORT.value: 
-    {"priority": 3, "dest": None},
+    {"priority": 3, "dest": NodeID.CDH.value},
     CmdID.CMD_CDH_PROCESS_RETURN.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.CDH.value},
     CmdID.CMD_CDH_PROCESS_LED_TEST.value: 
-    {"priority": 4, "dest": None},
+    {"priority": 4, "dest": NodeID.CDH.value},
 
     ## Clock
     CmdID.CMD_CDH_SET_RTC.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.CDH.value},
     CmdID.CMD_CDH_GET_RTC.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.CDH.value},
 
     ## Tests
     CmdID.CMD_CDH_TEST_FLASH.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.CDH.value},
     CmdID.CMD_CDH_TEST_MRAM.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.CDH.value},
 
     CmdID.CMD_CDH_RESET_SUBSYSTEM.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.CDH.value},
 
     ## Antenna
     CmdID.CMD_CDH_ENABLE_ANTENNA.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.CDH.value},
     CmdID.CMD_CDH_DEPLOY_ANTENNA.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.CDH.value},
 
     ############################################
     ### POWER
     ############################################
     CmdID.CMD_PWR_PROCESS_HEARTBEAT.value: 
-    {"priority": 2, "dest": None},
+    {"priority": 2, "dest": NodeID.Power.value},
     CmdID.CMD_PWR_SET_SUBSYSTEM_POWER.value: 
-    {"priority": 0, "dest": None},
+    {"priority": 0, "dest": NodeID.Power.value},
     CmdID.CMD_PWR_GET_SUBSYSTEM_POWER.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.Power.value},
     CmdID.CMD_PWR_SET_BATTERY_HEATER_POWER.value: 
-    {"priority": 5, "dest": None},
+    {"priority": 5, "dest": NodeID.Power.value},
     CmdID.CMD_PWR_GET_BATTERY_HEATER_POWER.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.Power.value},
     CmdID.CMD_PWR_SET_BATTERY_ACCESS.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.Power.value},
     CmdID.CMD_PWR_GET_BATTERY_ACCESS.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.Power.value},
 
     ############################################
     ### ADCS
     ############################################
     CmdID.CMD_ADCS_SET_MAGNETORQUER_DIRECTION.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.ADCS.value},
     CmdID.CMD_ADCS_GET_MAGNETORQUER_DIRECTION.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.ADCS.value},
     CmdID.CMD_ADCS_SET_OPERATING_MODE.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.ADCS.value},
     CmdID.CMD_ADCS_GET_OPERATING_MODE.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.ADCS.value},
 
     ############################################
     ### PAYLOAD
     ############################################
     CmdID.CMD_PLD_SET_ACTIVE_ENVS.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.Payload.value},
     CmdID.CMD_PLD_GET_ACTIVE_ENVS.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.Payload.value},
     CmdID.CMD_PLD_SET_SETPOINT.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.Payload.value},
     CmdID.CMD_PLD_GET_SETPOINT.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.Payload.value},
     CmdID.CMD_PLD_SET_TOLERANCE.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.Payload.value},
     CmdID.CMD_PLD_GET_TOLERANCE.value: 
-    {"priority": 32, "dest": None},
+    {"priority": 32, "dest": NodeID.Payload.value},
     CmdID.CMD_PLD_TEST_LEDS.value: 
-    {"priority": 4, "dest": None}
+    {"priority": 4, "dest": NodeID.Payload.value}
 }
 # Add command names using CmdID
 for key in CmdID:
