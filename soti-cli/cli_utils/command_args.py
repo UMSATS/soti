@@ -1,124 +1,93 @@
-# create functions to print out commands' args in appropriate json format,
-# then map each one with its corresponding command
+from constants import CmdID
 
-def parse_01(args, output):
-    output["acknowledged-command"] = f"0x{args[:2]}"
-    output["reply-data"] = [f"0x{args[i:i+2]}" for i in range(2, 14, 2)]
+# adds command args to the output json
+def parse_args(args, output):
+    data = Data(args)
+    code = data.bytes(0)
+    try: 
+        match CmdID(code).name:
+            # Common
+            case 'CMD_COMM_GET_TELEMETRY':
+                output['telemetry-key'] = data.bytes(1)
+            case 'CMD_COMM_SET_TELEMETRY_INTERVAL':
+                output['telemetry-key'] = data.bytes(1)
+                output['interval'] = data.bytes(2, 3)
+            case 'CMD_COMM_GET_TELEMETRY_INTERVAL':
+                output['telemetry-key'] = data.bytes(1)
+            case 'CMD_COMM_UPDATE_START':
+                output['address'] = data.bytes(1, 4)
+            case 'CMD_COMM_UPDATE_LOAD':
+                output['data'] = data.bytes(1, 8)
+
+            # CDH
+            case 'CMD_CDH_PROCESS_RUNTIME_ERROR':
+                output['error-code'] = data.bytes(1)
+                output['context-code'] = data.bytes(2)
+                output['debug-data'] = data.bytes(3, 8)
+            case 'CMD_CDH_PROCESS_COMMAND_ERROR':
+                output['error-code'] = data.bytes(1)
+                output['command-id'] = data.bytes(2)
+                output['debug-data'] = data.bytes(3, 8)
+            case 'CMD_CDH_PROCESS_NOTIFICATION':
+                output['notification-id'] = data.bytes(1)
+            case 'CMD_CDH_PROCESS_TELEMETRY_REPORT':
+                output['telemetry-key'] = data.bytes(1)
+                output['sequence-number'] = data.bytes(2)
+                output['packet-number'] = data.bytes(3)
+                output['telemetry'] = data.bytes(4, 8)
+            case 'CMD_CDH_PROCESS_RETURN':
+                output['command-id'] = data.bytes(1)
+                output['data'] = data.bytes(2, 8)
+            case 'CMD_CDH_PROCESS_LED_TEST':
+                output['bitmap'] = data.bytes(1, 2)
+            case 'CMD_CDH_SET_RTC':
+                output['unix-timestamp'] = data.bytes(1, 4)
+            case 'CMD_CDH_RESET_SUBSYSTEM':
+                output['subsystem-id'] = data.bytes(1)
+
+            # Power
+            case 'CMD_PWR_SET_SUBSYSTEM_POWER':
+                output['subsystem-id'] = data.bytes(1)
+                output['power'] = data.bytes(2)
+            case 'CMD_PWR_GET_SUBSYSTEM_POWER':
+                output['subsystem-id'] = data.bytes(1)
+            case 'CMD_PWR_SET_BATTERY_HEATER_POWER':
+                output['heater-power'] = data.bytes(1)
+            case 'CMD_PWR_SET_BATTERY_ACCESS':
+                output['battery-access'] = data.bytes(1)
+
+            # ADCS
+            case 'CMD_ADCS_SET_MAGNETORQUER_DIRECTION':
+                output['magnetorquer-id'] = data.bytes(1)
+                output['direction'] = data.bytes(2)
+            case 'CMD_ADCS_GET_MAGNETORQUER_DIRECTION':
+                output['magnetorquer-id'] = data.bytes(1)
+            case 'CMD_ADCS_SET_OPERATING_MODE':
+                output['mode'] = data.bytes(1)
+
+            # Payload
+            case 'CMD_PLD_SET_ACTIVE_ENVS':
+                output['bitmap'] = data.bytes(1, 2)
+            case 'CMD_PLD_GET_SETPOINT':
+                output['well-id'] = data.bytes(1)
+                output['setpoint'] = data.bytes(2, 5)
+            case 'CMD_PLD_GET_SETPOINT':
+                output['well-id'] = data.bytes(1)
+            case 'CMD_PLD_SET_TOLERANCE':
+                output['tolerance'] = data.bytes(1, 4)
+    
+    except ValueError:
+        pass
+
     return output
 
-def parse_30(args, output):
-    output["telemetry-sequence-number"] = int(f"0x{args[:2]}", 16)
-    output["battery-charge"] = int(f"0x{args[2:10]}", 16)
-    return output
+# simple class to extract bytes easily
+class Data:
+    def __init__(self, args):
+        self.data = bytearray.fromhex(args)
 
-def parse_31(args, output):
-    output["telemetry-sequence-number"] = int(f"0x{args[:2]}", 16)
-    output["battery-temperature"] = int(f"0x{args[2:6]}", 16)
-    return output
-
-def parse_32(args, output):
-    output["telemetry-sequence-number"] = int(f"0x{args[:2]}", 16)
-    output["current-sensor-id"] = int(f"0x{args[2:4]}", 16)
-    output["current-consumption"] = int(f"0x{args[4:8]}", 16)
-    return output
-
-def parse_33(args, output):
-    output["telemetry-sequence-number"] = int(f"0x{args[:2]}", 16)
-    output["well-id"] = int(f"0x{args[2:4]}", 16)
-    output["light-level"] = int(f"0x{args[4:8]}", 16)
-    return output
-
-def parse_34(args, output):
-    output["telemetry-sequence-number"] = int(f"0x{args[:2]}", 16)
-    output["well-id"] = int(f"0x{args[2:4]}", 16)
-    output["temperature"] = int(f"0x{args[4:8]}", 16)
-    return output
-
-def parse_35(args, output):
-    output["telemetry-sequence-number"] = int(f"0x{args[:2]}", 16)
-    output["quaternion-i-component"] = int(f"0x{args[2:6]}", 16)
-    output["quaternion-j-component"] = int(f"0x{args[6:10]}", 16)
-    output["quaternion-k-component"] = int(f"0x{args[10:14]}", 16)
-    return output
-
-def parse_36(args, output):
-    output["telemetry-sequence-number"] = int(f"0x{args[:2]}", 16)
-    output["quaternion-real-component"] = int(f"0x{args[2:6]}", 16)
-    output["measurement-accuracy"] = int(f"0x{args[6:10]}", 16)
-    return output
-
-def parse_40(args, output):
-    return output
-
-def parse_41(args, output):
-    return output
-
-def parse_42(args, output):
-    return output
-
-def parse_43(args, output):
-    return output
-
-def parse_44(args, output):
-    return output
-
-def parse_46(args, output):
-    return output
-
-def parse_47(args, output):
-    return output
-
-def parse_48(args, output):
-    output["unix-timestamp"] = int(f"0x{args[:8]}", 16)
-    return output
-
-def parse_49(args, output):
-    output["unix-timestamp"] = int(f"0x{args[:8]}", 16)
-    return output
-
-def parse_4A(args, output):
-    return output
-
-def parse_50(args, output):
-    output["error-report"] = int(f"0x{args[:]}", 16)
-    return output
-
-def parse_51(args, output):
-    output["error-report"] = int(f"0x{args[:]}", 16)
-    return output
-
-def parse_52(args, output):
-    output["error-report"] = int(f"0x{args[:]}", 16)
-    return output
-
-"""
-Parse all other packets.
-"""
-def parse_generic(args, output):
-    output["command"] = f"0x{args[:2]}"
-    output["arguments"] = [f"0x{args[i:i+2]}" for i in range(2, 16, 2)]
-    return output
-
-parsers = {
-    0x01: parse_01,
-    0x30: parse_30,
-    0x31: parse_31,
-    0x32: parse_32,
-    0x33: parse_33,
-    0x34: parse_34,
-    0x35: parse_35,
-    0x36: parse_36,
-    0x40: parse_40,
-    0x41: parse_41,
-    0x42: parse_42,
-    0x43: parse_43,
-    0x44: parse_44,
-    0x46: parse_46,
-    0x47: parse_47,
-    0x48: parse_48,
-    0x49: parse_49,
-    0x4A: parse_4A,
-    0x50: parse_50,
-    0x51: parse_51,
-    0x52: parse_52,
-}
+    def bytes(self, start, end=None):
+        if end is None:
+            return self.data[start]
+        else:
+            return int.from_bytes(self.data[start:end+1])

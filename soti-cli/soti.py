@@ -36,7 +36,7 @@ import json
 import os
 from queue import Empty
 from cli_utils import help_strings
-from cli_utils.command_args import parsers, parse_generic
+from cli_utils.command_args import parse_args
 from cli_utils.constants import (
     MSG_HISTORY_FILENAME,
     MSG_SIZE,
@@ -69,7 +69,7 @@ class Soti_CLI(cmd.Cmd):
         priority = COMM_INFO[code]["priority"]
         dest_id = NodeID(COMM_INFO[code]["dest"])
 
-        print(f"\nCommand: {COMM_INFO[code]['name']}\nDestination: {NodeID(dest_id).name}")
+        print(f"\nCommand: {COMM_INFO[code]['name']}\nDestination: {dest_id.name}")
 
         buffer = bytearray([priority, self.sender_id.value, dest_id.value, code, 0, 0, 0, 0, 0, 0, 0])
 
@@ -215,10 +215,7 @@ def parse(msg_raw):
         # and handled on case-by-case basis
     }
 
-    if comm_code in parsers.keys():
-        new_msg_json = parsers[comm_code](msg[10:], new_msg_json)
-    else:
-        new_msg_json = parse_generic(msg[8:], new_msg_json)
+    parse_args(msg[8:], new_msg_json)
 
     return new_msg_json
 
