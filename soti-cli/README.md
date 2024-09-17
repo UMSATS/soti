@@ -1,7 +1,7 @@
 # SOTI CLI User Guide
 
 ## Prerequisites
-Please install Python 3.8.6 or later. For the CLI to work correctly, the command `python3` or `python` must allow you to run Python3 scripts.
+Please install Python 3.10 or later. For the CLI to work correctly, the command `python3` or `python` must allow you to run Python3 scripts.
 
 Please install the module [PySerial](https://pyserial.readthedocs.io/en/latest/index.html).
 
