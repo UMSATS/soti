@@ -193,7 +193,7 @@ COMM_INFO = {
     CmdID.CMD_PLD_TEST_LEDS.value: 
     {"priority": 4, "dest": NodeID.Payload.value}
 }
-# Add command names using CmdID
+# add command names using CmdID
 for key in CmdID:
     COMM_INFO[key.value]['name'] = key.name
 
