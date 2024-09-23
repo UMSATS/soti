@@ -17,27 +17,27 @@ def parse_args(args, output):
             case 'CMD_COMM_UPDATE_START':
                 output['address'] = data.bytes(1, 4)
             case 'CMD_COMM_UPDATE_LOAD':
-                output['data'] = data.bytes(1, 8)
+                output['data'] = data.bytes(1, 7)
 
             # CDH
             case 'CMD_CDH_PROCESS_RUNTIME_ERROR':
                 output['error-code'] = data.bytes(1)
                 output['context-code'] = data.bytes(2)
-                output['debug-data'] = data.bytes(3, 8)
+                output['debug-data'] = data.bytes(3, 7)
             case 'CMD_CDH_PROCESS_COMMAND_ERROR':
                 output['error-code'] = data.bytes(1)
                 output['command-id'] = data.bytes(2)
-                output['debug-data'] = data.bytes(3, 8)
+                output['debug-data'] = data.bytes(3, 7)
             case 'CMD_CDH_PROCESS_NOTIFICATION':
                 output['notification-id'] = data.bytes(1)
             case 'CMD_CDH_PROCESS_TELEMETRY_REPORT':
                 output['telemetry-key'] = data.bytes(1)
                 output['sequence-number'] = data.bytes(2)
                 output['packet-number'] = data.bytes(3)
-                output['telemetry'] = data.bytes(4, 8)
+                output['telemetry'] = data.bytes(4, 7)
             case 'CMD_CDH_PROCESS_RETURN':
                 output['command-id'] = data.bytes(1)
-                output['data'] = data.bytes(2, 8)
+                output['data'] = data.bytes(2, 7)
             case 'CMD_CDH_PROCESS_LED_TEST':
                 output['bitmap'] = data.bytes(1, 2)
             case 'CMD_CDH_SET_RTC':
@@ -81,11 +81,12 @@ def parse_args(args, output):
 
     return output
 
-# simple class to extract bytes easily
+# use to extract bytes from a hex string
 class Data:
     def __init__(self, args):
         self.data = bytearray.fromhex(args)
 
+    # returns an int of the specified bytes (inclusive, big-endian)
     def bytes(self, start, end=None):
         if end is None:
             return self.data[start]

@@ -35,7 +35,7 @@ for cmd in CmdID:
         command_map += " ==="
     
     id = hex(cmd.value)
-    # pad numbers less then 0x10 with a leading 0
+    # pad numbers less than 0x10 with a leading 0
     if len(id) < 4:
         id = id[:2] + "0" + id[2]
     # uppercase hex digits
