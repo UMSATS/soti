@@ -1,7 +1,7 @@
 # files
 MSG_HISTORY_FILENAME = "messages.json"
 CAMERA_DATA_FILENAME = "camera_data.txt"
-CAMERA_IMAGE_FILENAME = "sat_image.jpeg"
+CAMERA_IMAGE_FILENAME = "images/sat_image.jpeg"
 
 # message size
 MSG_SIZE = 11
