@@ -84,7 +84,7 @@ class Soti_CLI(cmd.Cmd):
         # fill the buffer with the input args
         position = 0
         for arg_byte in range(4,11):
-            buffer[arg_byte] = int(f"0x{input_args[position:position+2]}", 16)
+            buffer[arg_byte] = int(input_args[position:position+2], 16)
             position += 2
 
         # send the command + arguments to the serial handler to write to the serial device
@@ -94,7 +94,7 @@ class Soti_CLI(cmd.Cmd):
     def do_setid(self, line):
         try:
             id = int(line, 0)
-            if id in NodeID._value2member_map_:
+            if id in NodeID:
                 self.sender_id = NodeID(id)
                 print("Updated sender ID to {}.".format(self.sender_id.name))
             else:
@@ -204,13 +204,13 @@ def parser(in_msg_queue):
 # parses a message
 def parse(msg_raw):
     msg = bytes_to_string(msg_raw)
-    comm_code = int(f"0x{msg[8:10]}", 16)
+    comm_code = int(msg[8:10], 16)
 
     new_msg_json = {
         "time": datetime.datetime.now().strftime("%T"),
-        "priority": int(f"0x{msg[2:4]}", 16),
-        "sender-id": NodeID(int(f"0x{msg[4:6]}", 16)).name,
-        "destination-id": NodeID(int(f"0x{msg[6:8]}", 16)).name,
+        "priority": int(msg[2:4], 16),
+        "sender-id": NodeID(int(msg[4:6], 16)).name,
+        "destination-id": NodeID(int(msg[6:8], 16)).name,
         "type": CmdID(comm_code).name,
         # the remaining attributes are command-specific,
         # and handled on case-by-case basis
