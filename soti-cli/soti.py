@@ -42,8 +42,7 @@ from cli_utils.constants import (
     MSG_SIZE,
     COMM_INFO,
     NodeID,
-    CmdID,
-    QUERY_ATTRS
+    CmdID
 )
 
 
