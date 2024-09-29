@@ -196,16 +196,3 @@ COMM_INFO = {
 # add command names using CmdID
 for key in CmdID:
     COMM_INFO[key.value]['name'] = key.name
-
-# associates the "query" attributes with their command code
-# so they can be pulled out of the message history file
-QUERY_ATTRS = {
-    0x01: "ack",
-    0x30: "battery-charge",
-    0x31: "battery-temperature",
-    0x32: "satellite-current-consumption",
-    0x33: "algae-well-light-level",
-    0x34: "algae-well-temperature",
-    0x35: "rotation-vector-1",
-    0x36: "rotation-vector-2",
-}

@@ -42,6 +42,7 @@ from cli_utils.constants import (
     MSG_SIZE,
     COMM_INFO,
     NodeID,
+    CmdID,
     QUERY_ATTRS
 )
 
@@ -103,7 +104,7 @@ class Soti_CLI(cmd.Cmd):
 
     # query the telemetry
     def do_query(self, line):
-        print("\nSearching message history for {} data…".format(line))
+        print("\nSearching message history for {} commands...".format(line))
 
         with open(MSG_HISTORY_FILENAME) as history:
             msgs = json.load(history)
@@ -210,7 +211,7 @@ def parse(msg_raw):
         "priority": int(f"0x{msg[2:4]}", 16),
         "sender-id": NodeID(int(f"0x{msg[4:6]}", 16)).name,
         "destination-id": NodeID(int(f"0x{msg[6:8]}", 16)).name,
-        "type": QUERY_ATTRS.get(comm_code) or "other-message",
+        "type": CmdID(comm_code).name,
         # the remaining attributes are command-specific,
         # and handled on case-by-case basis
     }
