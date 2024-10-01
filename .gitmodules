@@ -1,3 +1,3 @@
-[submodule "soti-stm32project-boardV1/Drivers/tsat-utilities-kit"]
-	path = soti-stm32project-boardV1/Drivers/tsat-utilities-kit
+[submodule "soti-board-project/Drivers/tsat-utilities-kit"]
+	path = soti-board-project/Drivers/tsat-utilities-kit
 	url = https://github.com/UMSATS/tsat-utilities-kit
