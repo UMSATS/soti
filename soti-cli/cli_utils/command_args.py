@@ -1,4 +1,4 @@
-from cli_utils.constants import CmdID, NodeID
+from constants import CmdID, NodeID
 import struct
 
 
