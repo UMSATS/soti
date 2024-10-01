@@ -1,3 +1,5 @@
+"""Global constants used in the program."""
+
 from enum import Enum, auto
 from pathlib import Path
 
@@ -9,15 +11,33 @@ MSG_HISTORY_FILENAME = ROOT_DIR / "messages.json"
 # message size
 MSG_SIZE = 11
 
-# associates a subsystem id with a human-readable name for message history
-class NodeID(Enum):
-    CDH     = 0
-    Power   = 1
-    ADCS    = 2
-    Payload = 3
 
-# command IDs copied from TSAT Utilities Kit's CmdID enum
+class NodeID(Enum):
+    """Associates a subsystem id with a human-readable name for message history."""
+    CDH  = 0
+    PWR  = 1
+    ADCS = 2
+    PLD  = 3
+    
+    def get_display_name(self) -> str:
+        """
+        Returns a friendlier name for each enum member.
+        
+        Example Usage:
+        print(Node.CDH.get_display_name())
+        """
+        
+        display_names = {
+            NodeID.CDH: "CDH",
+            NodeID.PWR: "Power",
+            NodeID.ADCS: "ADCS",
+            NodeID.PLD: "Payload"
+        }
+        return display_names[self]
+
+
 class CmdID(Enum):
+    """Command IDs copied from TSAT Utilities Kit's CmdID enum"""
     ############################################
     ### COMMON
     ############################################
@@ -40,7 +60,7 @@ class CmdID(Enum):
     CDH_PROCESS_NOTIFICATION        = auto()
     CDH_PROCESS_TELEMETRY_REPORT    = auto()
     CDH_PROCESS_RETURN              = auto()
-    CDH_PROCESS_LED_TEST            = auto()   
+    CDH_PROCESS_LED_TEST            = auto()
 
     ## Clock
     CDH_SET_RTC                     = auto()
@@ -129,13 +149,13 @@ COMM_INFO = {
     ############################################
     ### POWER
     ############################################
-    CmdID.PWR_PROCESS_HEARTBEAT:           {"priority": 2, "dest": NodeID.Power},
-    CmdID.PWR_SET_SUBSYSTEM_POWER:         {"priority": 0, "dest": NodeID.Power},
-    CmdID.PWR_GET_SUBSYSTEM_POWER:         {"priority": 32, "dest": NodeID.Power},
-    CmdID.PWR_SET_BATTERY_HEATER_POWER:    {"priority": 5, "dest": NodeID.Power},
-    CmdID.PWR_GET_BATTERY_HEATER_POWER:    {"priority": 32, "dest": NodeID.Power},
-    CmdID.PWR_SET_BATTERY_ACCESS:          {"priority": 32, "dest": NodeID.Power},
-    CmdID.PWR_GET_BATTERY_ACCESS:          {"priority": 32, "dest": NodeID.Power},
+    CmdID.PWR_PROCESS_HEARTBEAT:           {"priority": 2, "dest": NodeID.PWR},
+    CmdID.PWR_SET_SUBSYSTEM_POWER:         {"priority": 0, "dest": NodeID.PWR},
+    CmdID.PWR_GET_SUBSYSTEM_POWER:         {"priority": 32, "dest": NodeID.PWR},
+    CmdID.PWR_SET_BATTERY_HEATER_POWER:    {"priority": 5, "dest": NodeID.PWR},
+    CmdID.PWR_GET_BATTERY_HEATER_POWER:    {"priority": 32, "dest": NodeID.PWR},
+    CmdID.PWR_SET_BATTERY_ACCESS:          {"priority": 32, "dest": NodeID.PWR},
+    CmdID.PWR_GET_BATTERY_ACCESS:          {"priority": 32, "dest": NodeID.PWR},
 
     ############################################
     ### ADCS
@@ -148,11 +168,11 @@ COMM_INFO = {
     ############################################
     ### PAYLOAD
     ############################################
-    CmdID.PLD_SET_ACTIVE_ENVS:             {"priority": 32, "dest": NodeID.Payload},
-    CmdID.PLD_GET_ACTIVE_ENVS:             {"priority": 32, "dest": NodeID.Payload},
-    CmdID.PLD_SET_SETPOINT:                {"priority": 32, "dest": NodeID.Payload},
-    CmdID.PLD_GET_SETPOINT:                {"priority": 32, "dest": NodeID.Payload},
-    CmdID.PLD_SET_TOLERANCE:               {"priority": 32, "dest": NodeID.Payload},
-    CmdID.PLD_GET_TOLERANCE:               {"priority": 32, "dest": NodeID.Payload},
-    CmdID.PLD_TEST_LEDS:                   {"priority": 4, "dest": NodeID.Payload}
+    CmdID.PLD_SET_ACTIVE_ENVS:             {"priority": 32, "dest": NodeID.PLD},
+    CmdID.PLD_GET_ACTIVE_ENVS:             {"priority": 32, "dest": NodeID.PLD},
+    CmdID.PLD_SET_SETPOINT:                {"priority": 32, "dest": NodeID.PLD},
+    CmdID.PLD_GET_SETPOINT:                {"priority": 32, "dest": NodeID.PLD},
+    CmdID.PLD_SET_TOLERANCE:               {"priority": 32, "dest": NodeID.PLD},
+    CmdID.PLD_GET_TOLERANCE:               {"priority": 32, "dest": NodeID.PLD},
+    CmdID.PLD_TEST_LEDS:                   {"priority": 4, "dest": NodeID.PLD}
 }

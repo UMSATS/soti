@@ -1,7 +1,8 @@
+"""Includes strings used in help messages."""
+
 from cli_utils.constants import CmdID
 
 
-# well-known help messages for commands
 HELP_MESSAGE = """
 send: sends a command to the satellite (input is hexadecimal, ex. 0xA1)
 setid: sets the sender ID of sent commands
@@ -13,8 +14,8 @@ exit: exits the program
 """
 
 
-# Generates a formatted list of commands based off the CmdID enum.
 def generate_command_list() -> str:
+    """Generates a formatted list of commands based off the CmdID enum."""
     # Friendlier category names.
     category_names = {
         "COMM": "Common",

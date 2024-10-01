@@ -41,7 +41,7 @@ class CommandLine(cmd.Cmd):
         priority = COMM_INFO[cmd_id]["priority"]
         dest_id = COMM_INFO[cmd_id]["dest"]
 
-        print(f"\nCommand: {cmd_id.name}\nDestination: {dest_id.name}")
+        print(f"\nCommand: {cmd_id.name}\nDestination: {dest_id.get_display_name()}")
 
         buffer = bytearray([priority, self.sender_id.value, dest_id.value, cmd_id.value, 0, 0, 0, 0, 0, 0, 0])
 
@@ -68,7 +68,7 @@ class CommandLine(cmd.Cmd):
             node_id = NodeID(int(arg, 0))
             if node_id in NodeID:
                 self.sender_id = node_id
-                print(f"Updated sender ID to {self.sender_id.name}.")
+                print(f"Updated sender ID to {self.sender_id.get_display_name()}.")
             else:
                 print("Invalid sender ID.")
         except ValueError:
