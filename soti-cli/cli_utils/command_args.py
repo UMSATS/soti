@@ -1,94 +1,96 @@
-from cli_utils.constants import CmdID
+from cli_utils.constants import CmdID, NodeID
+import struct
+
+# Extracts an integer of any width from a bytes object
+def extract_int(data: bytes, index: int, size: int, signed: bool = False) -> int:
+    return int.from_bytes(data[index:(size+index)], byteorder='little', signed=signed)
+
+# Extracts a 32-bit float from a bytes object
+def extract_float(data: bytes, index: int) -> float:
+    return struct.unpack('<f', data[index:(4+index)])[0]
+
+# Returns a hexadecimal representation of the provided data
+def to_hex_str(data: bytes) -> str:
+    return "0x" + data.hex()
+
+# Returns a binary representation of the provided data
+def to_bin_str(data: bytes) -> str:
+    bit_string = ''
+    for byte in data:
+        bits = bin(byte)[2:]  # remove '0b' prefix
+        bit_string += bits.zfill(8)  # pad with zeros to 8 bits
+    return "0b" + bit_string
 
 # adds command args to the output json
-def parse_args(args, output):
-    data = Data(args)
-    code = data.bytes(0)
-    try:
-        match CmdID(code):
-            # Common
-            case CmdID.COMM_GET_TELEMETRY:
-                output['telemetry-key'] = data.bytes(1)
-            case CmdID.COMM_SET_TELEMETRY_INTERVAL:
-                output['telemetry-key'] = data.bytes(1)
-                output['interval'] = data.bytes(2, 3)
-            case CmdID.COMM_GET_TELEMETRY_INTERVAL:
-                output['telemetry-key'] = data.bytes(1)
-            case CmdID.COMM_UPDATE_START:
-                output['address'] = data.bytes(1, 4)
-            case CmdID.COMM_UPDATE_LOAD:
-                output['data'] = data.bytes(1, 7)
-
-            # CDH
-            case CmdID.CDH_PROCESS_RUNTIME_ERROR:
-                output['error-code'] = data.bytes(1)
-                output['context-code'] = data.bytes(2)
-                output['debug-data'] = data.bytes(3, 7)
-            case CmdID.CDH_PROCESS_COMMAND_ERROR:
-                output['error-code'] = data.bytes(1)
-                output['command-id'] = data.bytes(2)
-                output['debug-data'] = data.bytes(3, 7)
-            case CmdID.CDH_PROCESS_NOTIFICATION:
-                output['notification-id'] = data.bytes(1)
-            case CmdID.CDH_PROCESS_TELEMETRY_REPORT:
-                output['telemetry-key'] = data.bytes(1)
-                output['sequence-number'] = data.bytes(2)
-                output['packet-number'] = data.bytes(3)
-                output['telemetry'] = data.bytes(4, 7)
-            case CmdID.CDH_PROCESS_RETURN:
-                output['command-id'] = data.bytes(1)
-                output['data'] = data.bytes(2, 7)
-            case CmdID.CDH_PROCESS_LED_TEST:
-                output['bitmap'] = data.bytes(1, 2)
-            case CmdID.CDH_SET_RTC:
-                output['unix-timestamp'] = data.bytes(1, 4)
-            case CmdID.CDH_RESET_SUBSYSTEM:
-                output['subsystem-id'] = data.bytes(1)
-
-            # Power
-            case CmdID.PWR_SET_SUBSYSTEM_POWER:
-                output['subsystem-id'] = data.bytes(1)
-                output['power'] = data.bytes(2)
-            case CmdID.PWR_GET_SUBSYSTEM_POWER:
-                output['subsystem-id'] = data.bytes(1)
-            case CmdID.PWR_SET_BATTERY_HEATER_POWER:
-                output['heater-power'] = data.bytes(1)
-            case CmdID.PWR_SET_BATTERY_ACCESS:
-                output['battery-access'] = data.bytes(1)
-
-            # ADCS
-            case CmdID.ADCS_SET_MAGNETORQUER_DIRECTION:
-                output['magnetorquer-id'] = data.bytes(1)
-                output['direction'] = data.bytes(2)
-            case CmdID.ADCS_GET_MAGNETORQUER_DIRECTION:
-                output['magnetorquer-id'] = data.bytes(1)
-            case CmdID.ADCS_SET_OPERATING_MODE:
-                output['mode'] = data.bytes(1)
-
-            # Payload
-            case CmdID.PLD_SET_ACTIVE_ENVS:
-                output['bitmap'] = data.bytes(1, 2)
-            case CmdID.PLD_GET_SETPOINT:
-                output['well-id'] = data.bytes(1)
-                output['setpoint'] = data.bytes(2, 5)
-            case CmdID.PLD_GET_SETPOINT:
-                output['well-id'] = data.bytes(1)
-            case CmdID.PLD_SET_TOLERANCE:
-                output['tolerance'] = data.bytes(1, 4)
-    
-    except ValueError:
-        pass
-
-    return output
-
-# use to extract bytes from a hex string
-class Data:
-    def __init__(self, args):
-        self.data = bytearray.fromhex(args)
-
-    # returns an int of the specified bytes (inclusive, big-endian)
-    def bytes(self, start, end=None):
-        if end is None:
-            return self.data[start]
-        else:
-            return int.from_bytes(self.data[start:end+1])
+def parse_msg_body(cmd_id: CmdID, body: bytes, output: dict):
+    match cmd_id:
+        
+        # Common
+        case CmdID.COMM_GET_TELEMETRY:
+            output['telemetry-key'] = body[0]
+        case CmdID.COMM_SET_TELEMETRY_INTERVAL:
+            output['telemetry-key'] = body[0]
+            output['interval'] = extract_int(body, 1, 2)
+        case CmdID.COMM_GET_TELEMETRY_INTERVAL:
+            output['telemetry-key'] = body[0]
+        case CmdID.COMM_UPDATE_START:
+            output['address'] = extract_int(body, 0, 4)
+        case CmdID.COMM_UPDATE_LOAD:
+            output['data'] = to_hex_str(body)
+        
+        # CDH
+        case CmdID.CDH_PROCESS_RUNTIME_ERROR:
+            output['error-code'] = body[0]
+            output['context-code'] = body[1]
+            output['debug-data'] = to_hex_str(body[2:7])
+        case CmdID.CDH_PROCESS_COMMAND_ERROR:
+            output['error-code'] = body[0]
+            output['command-id'] = CmdID(body[1])
+            output['debug-data'] = to_hex_str(body[2:7])
+        case CmdID.CDH_PROCESS_NOTIFICATION:
+            output['notification-id'] = body[0]
+        case CmdID.CDH_PROCESS_TELEMETRY_REPORT:
+            output['telemetry-key'] = body[0]
+            output['sequence-number'] = body[1]
+            output['packet-number'] = body[2]
+            output['telemetry'] = to_hex_str(body[3:7])
+        case CmdID.CDH_PROCESS_RETURN:
+            output['command-id'] = CmdID(body[0])
+            output['data'] = to_hex_str(body[1:7])
+        case CmdID.CDH_PROCESS_LED_TEST:
+            output['bitmap'] = to_bin_str(body[:2])
+        case CmdID.CDH_SET_RTC:
+            output['unix-timestamp'] = extract_int(body, 0, 4)
+        case CmdID.CDH_RESET_SUBSYSTEM:
+            output['subsystem-id'] = NodeID(body[0])
+        
+        # Power
+        case CmdID.PWR_SET_SUBSYSTEM_POWER:
+            output['subsystem-id'] = NodeID(body[0])
+            output['power'] = bool(body[1])
+        case CmdID.PWR_GET_SUBSYSTEM_POWER:
+            output['subsystem-id'] = NodeID(body[0])
+        case CmdID.PWR_SET_BATTERY_HEATER_POWER:
+            output['heater-power'] = bool(body[0])
+        case CmdID.PWR_SET_BATTERY_ACCESS:
+            output['battery-access'] = bool(body[0])
+        
+        # ADCS
+        case CmdID.ADCS_SET_MAGNETORQUER_DIRECTION:
+            output['magnetorquer-id'] = body[0]
+            output['direction'] = extract_int(body, 1, 1, signed=True)
+        case CmdID.ADCS_GET_MAGNETORQUER_DIRECTION:
+            output['magnetorquer-id'] = body[0]
+        case CmdID.ADCS_SET_OPERATING_MODE:
+            output['mode'] = body[0]
+        
+        # Payload
+        case CmdID.PLD_SET_ACTIVE_ENVS:
+            output['bitmap'] = to_bin_str(body[:2])
+        case CmdID.PLD_GET_SETPOINT:
+            output['well-id'] = body[0]
+            output['setpoint'] = extract_float(body, 1)
+        case CmdID.PLD_GET_SETPOINT:
+            output['well-id'] = body[0]
+        case CmdID.PLD_SET_TOLERANCE:
+            output['tolerance'] = extract_float(body, 0)
