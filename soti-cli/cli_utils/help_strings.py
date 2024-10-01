@@ -1,4 +1,4 @@
-from constants import CmdID
+from cli_utils.constants import CmdID
 
 
 # well-known help messages for commands
