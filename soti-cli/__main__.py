@@ -79,7 +79,7 @@ class CommandLine(cmd.Cmd):
         """Queries the telemetry."""
         print(f"\nSearching message history for {line} commands...")
 
-        with open(MSG_HISTORY_FILENAME) as history:
+        with open(MSG_HISTORY_FILENAME, encoding="utf_8") as history:
             msgs = json.load(history)
 
         num_results = 0
@@ -94,7 +94,7 @@ class CommandLine(cmd.Cmd):
 
     def do_clear(self, line):
         """Clears the json message history file."""
-        with open(MSG_HISTORY_FILENAME, 'w') as history:
+        with open(MSG_HISTORY_FILENAME, 'w', encoding="utf_8") as history:
             history.write("[]")
             history.flush()
         print("The json message history file has been cleared.\n")
@@ -129,7 +129,7 @@ class CommandLine(cmd.Cmd):
 def init_json():
     """Initializes the JSON file which logs all messages."""
     if (not os.path.exists(MSG_HISTORY_FILENAME)) or (os.path.getsize(MSG_HISTORY_FILENAME) == 0):
-        with open(MSG_HISTORY_FILENAME, 'w') as history:
+        with open(MSG_HISTORY_FILENAME, 'w', encoding="utf_8") as history:
             history.write("[]")
 
 
