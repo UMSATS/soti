@@ -4,76 +4,76 @@ from cli_utils.constants import CmdID
 def parse_args(args, output):
     data = Data(args)
     code = data.bytes(0)
-    try: 
-        match CmdID(code).name:
+    try:
+        match CmdID(code):
             # Common
-            case 'COMM_GET_TELEMETRY':
+            case CmdID.COMM_GET_TELEMETRY:
                 output['telemetry-key'] = data.bytes(1)
-            case 'COMM_SET_TELEMETRY_INTERVAL':
+            case CmdID.COMM_SET_TELEMETRY_INTERVAL:
                 output['telemetry-key'] = data.bytes(1)
                 output['interval'] = data.bytes(2, 3)
-            case 'COMM_GET_TELEMETRY_INTERVAL':
+            case CmdID.COMM_GET_TELEMETRY_INTERVAL:
                 output['telemetry-key'] = data.bytes(1)
-            case 'COMM_UPDATE_START':
+            case CmdID.COMM_UPDATE_START:
                 output['address'] = data.bytes(1, 4)
-            case 'COMM_UPDATE_LOAD':
+            case CmdID.COMM_UPDATE_LOAD:
                 output['data'] = data.bytes(1, 7)
 
             # CDH
-            case 'CDH_PROCESS_RUNTIME_ERROR':
+            case CmdID.CDH_PROCESS_RUNTIME_ERROR:
                 output['error-code'] = data.bytes(1)
                 output['context-code'] = data.bytes(2)
                 output['debug-data'] = data.bytes(3, 7)
-            case 'CDH_PROCESS_COMMAND_ERROR':
+            case CmdID.CDH_PROCESS_COMMAND_ERROR:
                 output['error-code'] = data.bytes(1)
                 output['command-id'] = data.bytes(2)
                 output['debug-data'] = data.bytes(3, 7)
-            case 'CDH_PROCESS_NOTIFICATION':
+            case CmdID.CDH_PROCESS_NOTIFICATION:
                 output['notification-id'] = data.bytes(1)
-            case 'CDH_PROCESS_TELEMETRY_REPORT':
+            case CmdID.CDH_PROCESS_TELEMETRY_REPORT:
                 output['telemetry-key'] = data.bytes(1)
                 output['sequence-number'] = data.bytes(2)
                 output['packet-number'] = data.bytes(3)
                 output['telemetry'] = data.bytes(4, 7)
-            case 'CDH_PROCESS_RETURN':
+            case CmdID.CDH_PROCESS_RETURN:
                 output['command-id'] = data.bytes(1)
                 output['data'] = data.bytes(2, 7)
-            case 'CDH_PROCESS_LED_TEST':
+            case CmdID.CDH_PROCESS_LED_TEST:
                 output['bitmap'] = data.bytes(1, 2)
-            case 'CDH_SET_RTC':
+            case CmdID.CDH_SET_RTC:
                 output['unix-timestamp'] = data.bytes(1, 4)
-            case 'CDH_RESET_SUBSYSTEM':
+            case CmdID.CDH_RESET_SUBSYSTEM:
                 output['subsystem-id'] = data.bytes(1)
 
             # Power
-            case 'PWR_SET_SUBSYSTEM_POWER':
+            case CmdID.PWR_SET_SUBSYSTEM_POWER:
                 output['subsystem-id'] = data.bytes(1)
                 output['power'] = data.bytes(2)
-            case 'PWR_GET_SUBSYSTEM_POWER':
+            case CmdID.PWR_GET_SUBSYSTEM_POWER:
                 output['subsystem-id'] = data.bytes(1)
-            case 'PWR_SET_BATTERY_HEATER_POWER':
+            case CmdID.PWR_SET_BATTERY_HEATER_POWER:
                 output['heater-power'] = data.bytes(1)
-            case 'PWR_SET_BATTERY_ACCESS':
+            case CmdID.PWR_SET_BATTERY_ACCESS:
                 output['battery-access'] = data.bytes(1)
 
             # ADCS
-            case 'ADCS_SET_MAGNETORQUER_DIRECTION':
+            case CmdID.ADCS_SET_MAGNETORQUER_DIRECTION:
                 output['magnetorquer-id'] = data.bytes(1)
                 output['direction'] = data.bytes(2)
-            case 'ADCS_GET_MAGNETORQUER_DIRECTION':
+            case CmdID.ADCS_GET_MAGNETORQUER_DIRECTION:
                 output['magnetorquer-id'] = data.bytes(1)
-            case 'ADCS_SET_OPERATING_MODE':
+            case CmdID.ADCS_SET_OPERATING_MODE:
                 output['mode'] = data.bytes(1)
 
             # Payload
-            case 'PLD_SET_ACTIVE_ENVS':
+            case CmdID.PLD_SET_ACTIVE_ENVS:
                 output['bitmap'] = data.bytes(1, 2)
-            case 'PLD_GET_SETPOINT':
+            case CmdID.PLD_GET_SETPOINT:
                 output['well-id'] = data.bytes(1)
                 output['setpoint'] = data.bytes(2, 5)
-            case 'PLD_GET_SETPOINT':
+            case CmdID.PLD_GET_SETPOINT:
                 output['well-id'] = data.bytes(1)
-            case 'PLD_SET_TOLERANCE':
+            case CmdID.PLD_SET_TOLERANCE:
                 output['tolerance'] = data.bytes(1, 4)
     
     except ValueError:

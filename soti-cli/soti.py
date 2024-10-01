@@ -61,17 +61,19 @@ class Soti_CLI(cmd.Cmd):
 
     # send a command
     def do_send(self, line):
+        args = line.split()
+        
         # first byte of the argument is the command code
 		# (this operation grabs the "0x" prefix and first two hex digits)
-        code = int(line[0:4], 16)
+        cmd_id = CmdID(int(args[0], 16))
 
 		# now we can use the code to find its priority & destination id
-        priority = COMM_INFO[code]["priority"]
-        dest_id = NodeID(COMM_INFO[code]["dest"])
+        priority = COMM_INFO[cmd_id]["priority"]
+        dest_id = COMM_INFO[cmd_id]["dest"]
 
-        print(f"\nCommand: {COMM_INFO[code]['name']}\nDestination: {dest_id.name}")
+        print(f"\nCommand: {COMM_INFO[cmd_id]['name']}\nDestination: {dest_id.name}")
 
-        buffer = bytearray([priority, self.sender_id.value, dest_id.value, code, 0, 0, 0, 0, 0, 0, 0])
+        buffer = bytearray([priority, self.sender_id.value, dest_id.value, cmd_id.value, 0, 0, 0, 0, 0, 0, 0])
 
 		# split arguments (if any) into independent bytes
         input_args = line[4:]
