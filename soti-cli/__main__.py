@@ -29,9 +29,9 @@ class CommandLine(cmd.Cmd):
         self.sender_id = NodeID.CDH
 
 
-    def do_send(self, line):
+    def do_send(self, arg):
         """Sends a command."""
-        args = line.split()
+        args = arg.split()
 
         # first byte of the argument is the command code
         # (this operation grabs the "0x" prefix and first two hex digits)
@@ -46,7 +46,7 @@ class CommandLine(cmd.Cmd):
         buffer = bytearray([priority, self.sender_id.value, dest_id.value, cmd_id.value, 0, 0, 0, 0, 0, 0, 0])
 
         # split arguments (if any) into independent bytes
-        input_args = line[4:]
+        input_args = arg[4:]
 
         # pad input args with zeros to create a full message
         while len(input_args) < 14:
@@ -62,10 +62,10 @@ class CommandLine(cmd.Cmd):
         self.out_msg_queue.put(buffer)
 
 
-    def do_setid(self, line):
+    def do_setid(self, arg):
         """Changes the sender ID."""
         try:
-            id = int(line, 0)
+            id = int(arg, 0)
             if id in NodeID:
                 self.sender_id = NodeID(id)
                 print(f"Updated sender ID to {self.sender_id.name}.")
@@ -75,9 +75,9 @@ class CommandLine(cmd.Cmd):
             print("Invalid args.")
 
 
-    def do_query(self, line):
+    def do_query(self, arg):
         """Queries the telemetry."""
-        print(f"\nSearching message history for {line} commands...")
+        print(f"\nSearching message history for {arg} commands...")
 
         with open(MSG_HISTORY_FILENAME, encoding="utf_8") as history:
             msgs = json.load(history)
@@ -85,14 +85,14 @@ class CommandLine(cmd.Cmd):
         num_results = 0
 
         for msg in msgs:
-            if msg["type"] == line:
+            if msg["type"] == arg:
                 num_results += 1
                 print(msg)
 
         print(f"\nFound {num_results} results.\n")
 
 
-    def do_clear(self, line):
+    def do_clear(self, arg):
         """Clears the json message history file."""
         with open(MSG_HISTORY_FILENAME, 'w', encoding="utf_8") as history:
             history.write("[]")
@@ -100,17 +100,17 @@ class CommandLine(cmd.Cmd):
         print("The json message history file has been cleared.\n")
 
 
-    def do_help(self, line):
+    def do_help(self, arg):
         """Displays the help string."""
         print(help_strings.HELP_MESSAGE)
 
 
-    def do_list(self, line):
+    def do_list(self, arg):
         """Lists the available CAN commands."""
         print(help_strings.COMMAND_LIST)
 
 
-    def do_exit(self, line):
+    def do_exit(self, arg):
         """Exits the CLI."""
         print("\nExiting...")
         # Terminate all active child processes.
