@@ -65,9 +65,9 @@ class CommandLine(cmd.Cmd):
     def do_setid(self, arg):
         """Changes the sender ID."""
         try:
-            id = int(arg, 0)
-            if id in NodeID:
-                self.sender_id = NodeID(id)
+            node_id = NodeID(int(arg, 0))
+            if node_id in NodeID:
+                self.sender_id = node_id
                 print(f"Updated sender ID to {self.sender_id.name}.")
             else:
                 print("Invalid sender ID.")
