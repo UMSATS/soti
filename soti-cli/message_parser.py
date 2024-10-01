@@ -1,7 +1,9 @@
-from cli_utils.constants import *
+"""Parses messages from the input queue."""
+
 import datetime
 import json
 import struct
+from cli_utils.constants import NodeID, CmdID, MSG_HISTORY_FILENAME
 
 
 def parser(in_msg_queue):
@@ -11,10 +13,10 @@ def parser(in_msg_queue):
         new_msg_raw = in_msg_queue.get()
         new_msg_json = parse_message(new_msg_raw)
         print(f"Message Parsed: {new_msg_json}")
-        with open(MSG_HISTORY_FILENAME) as history:
+        with open(MSG_HISTORY_FILENAME, encoding="utf_8") as history:
             history_json = json.load(history)
         history_json.append(new_msg_json)
-        with open(MSG_HISTORY_FILENAME, 'w') as history:
+        with open(MSG_HISTORY_FILENAME, 'w', encoding="utf_8") as history:
             json.dump(history_json, history, indent=4)
 
 
@@ -40,23 +42,23 @@ def parse_message(msg: bytes):
     return parsed_msg
 
 
-# Extracts an integer of any width from a bytes object
 def extract_int(data: bytes, index: int, size: int, signed: bool = False) -> int:
+    """Extracts an integer of any width from a bytes object."""
     return int.from_bytes(data[index:(size+index)], byteorder='little', signed=signed)
 
 
-# Extracts a 32-bit float from a bytes object
 def extract_float(data: bytes, index: int) -> float:
+    """Extracts a 32-bit float from a bytes object."""
     return struct.unpack('<f', data[index:(4+index)])[0]
 
 
-# Returns a hexadecimal representation of the provided data
 def to_hex_str(data: bytes) -> str:
+    """Returns a hexadecimal representation of the provided data."""
     return "0x" + data.hex()
 
 
-# Returns a binary representation of the provided data
 def to_bin_str(data: bytes) -> str:
+    """Returns a binary representation of the provided data."""
     bit_string = ''
     for byte in data:
         bits = bin(byte)[2:]  # remove '0b' prefix
@@ -64,8 +66,8 @@ def to_bin_str(data: bytes) -> str:
     return "0b" + bit_string
 
 
-# adds command args to the output json
 def parse_msg_body(cmd_id: CmdID, body: bytes) -> dict:
+    """Returns relevant data about the provided message."""
     output = {}
 
     match cmd_id:

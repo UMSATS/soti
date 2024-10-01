@@ -92,7 +92,7 @@ class CommandLine(cmd.Cmd):
         print(f"\nFound {num_results} results.\n")
 
 
-    def do_clear(self, arg):
+    def do_clear(self, _):
         """Clears the json message history file."""
         with open(MSG_HISTORY_FILENAME, 'w', encoding="utf_8") as history:
             history.write("[]")
@@ -100,17 +100,17 @@ class CommandLine(cmd.Cmd):
         print("The json message history file has been cleared.\n")
 
 
-    def do_help(self, arg):
+    def do_help(self, _):
         """Displays the help string."""
         print(help_strings.HELP_MESSAGE)
 
 
-    def do_list(self, arg):
+    def do_list(self, _):
         """Lists the available CAN commands."""
         print(help_strings.COMMAND_LIST)
 
 
-    def do_exit(self, arg):
+    def do_exit(self, _):
         """Exits the CLI."""
         print("\nExiting...")
         # Terminate all active child processes.
