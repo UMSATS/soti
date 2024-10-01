@@ -1,7 +1,8 @@
-from cli_utils.constants import CmdID
+from constants import CmdID
+
 
 # well-known help messages for commands
-help_message = """
+HELP_MESSAGE = """
 send: sends a command to the satellite (input is hexadecimal, ex. 0xA1)
 setid: sets the sender ID of sent commands
 query: queries the satellite's message history for information
@@ -11,36 +12,39 @@ list: lists the available commands for each subsystem
 exit: exits the program
 """
 
-# formatted list of commands using CmdID enum
-command_map = ""
-command_map += "\nAvailable commands:\n\n=== Common ==="
-current_subsystem = "COM"
-for cmd in CmdID:
-    name = cmd.name
 
-    # add category header when subsystem changes
-    subsystem = name[:3]
-    if subsystem != current_subsystem:
-        current_subsystem = subsystem
-        command_map += "\n\n=== "
-        match subsystem:
-            case 'CDH':
-                command_map += "CDH"
-            case 'PWR':
-                command_map += "Power"
-            case 'ADC':
-                command_map += "ADCS"
-            case 'PLD':
-                command_map += "Payload"
-        command_map += " ==="
-    
-    id = hex(cmd.value)
-    # pad numbers less than 0x10 with a leading 0
-    if len(id) < 4:
-        id = id[:2] + "0" + id[2]
-    # uppercase hex digits
-    id = id[:2] + id[2:].upper()
+# Generates a formatted list of commands based off the CmdID enum.
+def generate_command_list() -> str:
+    # Friendlier category names.
+    category_names = {
+        "COMM": "Common",
+        "CDH": "CDH",
+        "PWR": "Power",
+        "ADCS": "ADCS",
+        "PLD": "Payload"
+    }
 
-    command_map += "\n{id}:\t{name}".format(id=id, name=name)
+    command_list = "\nAvailable Commands:\n"
+    current_category = None
+    for cmd_id in CmdID:
+        category = cmd_id.name.split('_', 1)[0] # Extract the prefix in the name.
 
-command_map += "\n"
+        if category != current_category:
+            current_category = category
+
+            if category in category_names:
+                category_name = category_names[category]
+            else:
+                category_name = category # Default to the prefix
+
+            command_list += "\n=== " + category_name + " ===\n"
+
+        hex_code = f'0x{cmd_id.value:02x}'
+        command_list += f"{hex_code}:\t{cmd_id.name}\n"
+
+    command_list += "\n"
+
+    return command_list
+
+
+COMMAND_LIST = generate_command_list()

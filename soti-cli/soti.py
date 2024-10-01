@@ -128,11 +128,11 @@ class Soti_CLI(cmd.Cmd):
     
     # display the help string
     def do_help(self, line):
-        print(help_strings.help_message)
+        print(help_strings.HELP_MESSAGE)
 
     # list the available commands
     def do_list(self, line):
-        print(help_strings.command_map)
+        print(help_strings.COMMAND_LIST)
 
     # exit the CLI
     def do_exit(self, line):
