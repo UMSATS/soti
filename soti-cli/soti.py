@@ -71,7 +71,7 @@ class Soti_CLI(cmd.Cmd):
         priority = COMM_INFO[cmd_id]["priority"]
         dest_id = COMM_INFO[cmd_id]["dest"]
 
-        print(f"\nCommand: {COMM_INFO[cmd_id]['name']}\nDestination: {dest_id.name}")
+        print(f"\nCommand: {cmd_id.name}\nDestination: {dest_id.name}")
 
         buffer = bytearray([priority, self.sender_id.value, dest_id.value, cmd_id.value, 0, 0, 0, 0, 0, 0, 0])
 
