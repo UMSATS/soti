@@ -153,7 +153,3 @@ COMM_INFO = {
     CmdID.PLD_GET_TOLERANCE:               {"priority": 32, "dest": NodeID.Payload},
     CmdID.PLD_TEST_LEDS:                   {"priority": 4, "dest": NodeID.Payload}
 }
-
-# add command names using CmdID
-for cmd_id in CmdID:
-    COMM_INFO[cmd_id]['name'] = cmd_id.name
