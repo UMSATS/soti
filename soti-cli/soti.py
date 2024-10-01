@@ -36,7 +36,7 @@ import json
 import os
 from queue import Empty
 from cli_utils import help_strings
-from cli_utils.command_args import parse_args
+from cli_utils.command_args import parse_msg_body
 from cli_utils.constants import (
     MSG_HISTORY_FILENAME,
     MSG_SIZE,
@@ -205,19 +205,19 @@ def parser(in_msg_queue):
 # parses a message
 def parse(msg_raw):
     msg = bytes_to_string(msg_raw)
-    comm_code = int(msg[8:10], 16)
+    cmd_id = CmdID(msg_raw[3])
 
     new_msg_json = {
         "time": datetime.datetime.now().strftime("%T"),
         "priority": int(msg[2:4], 16),
         "sender-id": NodeID(int(msg[4:6], 16)).name,
         "destination-id": NodeID(int(msg[6:8], 16)).name,
-        "type": CmdID(comm_code).name,
+        "type": cmd_id.name,
         # the remaining attributes are command-specific,
         # and handled on case-by-case basis
     }
 
-    parse_args(msg[8:], new_msg_json)
+    parse_msg_body(cmd_id, msg_raw[4:], new_msg_json)
 
     return new_msg_json
 
