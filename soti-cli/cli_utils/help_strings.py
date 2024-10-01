@@ -19,7 +19,7 @@ for cmd in CmdID:
     name = cmd.name
 
     # add category header when subsystem changes
-    subsystem = name[4:7]
+    subsystem = name[:3]
     if subsystem != current_subsystem:
         current_subsystem = subsystem
         command_map += "\n\n=== "
