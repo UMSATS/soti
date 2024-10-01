@@ -3,7 +3,7 @@
 import datetime
 import json
 import struct
-from cli_utils.constants import NodeID, CmdID, MSG_HISTORY_FILENAME
+from utils.constants import NodeID, CmdID, MSG_HISTORY_PATH
 
 
 def parser(in_msg_queue):
@@ -13,10 +13,10 @@ def parser(in_msg_queue):
         new_msg_raw = in_msg_queue.get()
         new_msg_json = parse_message(new_msg_raw)
         print(f"Message Parsed: {new_msg_json}")
-        with open(MSG_HISTORY_FILENAME, encoding="utf_8") as history:
+        with open(MSG_HISTORY_PATH, encoding="utf_8") as history:
             history_json = json.load(history)
         history_json.append(new_msg_json)
-        with open(MSG_HISTORY_FILENAME, 'w', encoding="utf_8") as history:
+        with open(MSG_HISTORY_PATH, 'w', encoding="utf_8") as history:
             json.dump(history_json, history, indent=4)
 
 

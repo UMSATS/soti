@@ -2,7 +2,7 @@
 
 from queue import Empty
 import serial
-from cli_utils.constants import MSG_SIZE
+from utils.constants import MSG_SIZE
 
 
 def serial_reader(in_msg_queue, out_msg_queue, soti_port):

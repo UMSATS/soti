@@ -5,10 +5,11 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
-# files
-MSG_HISTORY_FILENAME = ROOT_DIR / "messages.json"
+SAVE_DATA_DIR = ROOT_DIR / "save-data"
 
-# message size
+MSG_HISTORY_PATH = SAVE_DATA_DIR / "messages.json"
+
+# The length of a serialized message in bytes.
 MSG_SIZE = 11
 
 
@@ -18,7 +19,7 @@ class NodeID(Enum):
     PWR  = 1
     ADCS = 2
     PLD  = 3
-    
+
     def get_display_name(self) -> str:
         """
         Returns a friendlier name for each enum member.
@@ -26,7 +27,7 @@ class NodeID(Enum):
         Example Usage:
         print(Node.CDH.get_display_name())
         """
-        
+
         display_names = {
             NodeID.CDH: "CDH",
             NodeID.PWR: "Power",

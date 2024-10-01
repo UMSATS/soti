@@ -8,8 +8,8 @@ import json
 import os
 import serial.tools.list_ports
 
-from cli_utils import help_strings
-from cli_utils.constants import NodeID, CmdID, COMM_INFO, MSG_HISTORY_FILENAME
+from utils import help_strings
+from utils.constants import SAVE_DATA_DIR, NodeID, CmdID, COMM_INFO, MSG_HISTORY_PATH
 
 from serial_reader import serial_reader
 from message_parser import parser
@@ -79,7 +79,7 @@ class CommandLine(cmd.Cmd):
         """Queries the telemetry."""
         print(f"\nSearching message history for {arg} commands...")
 
-        with open(MSG_HISTORY_FILENAME, encoding="utf_8") as history:
+        with open(MSG_HISTORY_PATH, encoding="utf_8") as history:
             msgs = json.load(history)
 
         num_results = 0
@@ -94,7 +94,7 @@ class CommandLine(cmd.Cmd):
 
     def do_clear(self, _):
         """Clears the json message history file."""
-        with open(MSG_HISTORY_FILENAME, 'w', encoding="utf_8") as history:
+        with open(MSG_HISTORY_PATH, 'w', encoding="utf_8") as history:
             history.write("[]")
             history.flush()
         print("The json message history file has been cleared.\n")
@@ -128,8 +128,11 @@ class CommandLine(cmd.Cmd):
 
 def init_json():
     """Initializes the JSON file which logs all messages."""
-    if (not os.path.exists(MSG_HISTORY_FILENAME)) or (os.path.getsize(MSG_HISTORY_FILENAME) == 0):
-        with open(MSG_HISTORY_FILENAME, 'w', encoding="utf_8") as history:
+    if not os.path.exists(SAVE_DATA_DIR):
+        os.mkdir(SAVE_DATA_DIR)
+
+    if (not os.path.exists(MSG_HISTORY_PATH)) or (os.path.getsize(MSG_HISTORY_PATH) == 0):
+        with open(MSG_HISTORY_PATH, 'w', encoding="utf_8") as history:
             history.write("[]")
 
 
