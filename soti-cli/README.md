@@ -1,18 +1,38 @@
 # SOTI CLI User Guide
 
 ## Prerequisites
-Please install Python 3.10 or later. For the CLI to work correctly, the command `python3` or `python` must allow you to run Python3 scripts.
 
-Please install the module [PySerial](https://pyserial.readthedocs.io/en/latest/index.html).
+### Python 3.10
+
+You will need Python 3.10 or later. To check which version you have, enter:
+
+```
+python3 --version
+```
+
+If your Python version is too old, install the latest version from [python.org](https://www.python.org/downloads/).
+
+### Dependencies
+
+Next, install the module [PySerial](https://pyserial.readthedocs.io/en/latest/index.html).
 
 `pip install serial` & `pip install pyserial`
 
 More detailed installation instructions [here](https://github.com/pyserial/pyserial#installation).
 
-## How to run
-To run the program, run `python3 .\soti.py` or `python .\soti.py`.
+### Hardware
 
-No arguments are required.
+As of writing, the CLI program does not work without an STM32 board. Consider purchasing a [Nucleo-64](https://www.st.com/en/evaluation-tools/nucleo-l452re.html) or using the SOTI board found in the UMSATS lounge.
+
+## How to run
+
+First, plug in your board with a USB-B Micro cable.
+
+To run the program, open the root folder in your terminal. Then run:
+
+```
+python3 soti-cli
+```
 
 ## Linux & MacOS instructions
 Accessing the serial port is sometimes restricted to the super user.

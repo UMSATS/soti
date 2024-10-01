@@ -1,7 +1,10 @@
 from enum import Enum, auto
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
 
 # files
-MSG_HISTORY_FILENAME = "messages.json"
+MSG_HISTORY_FILENAME = ROOT_DIR / "messages.json"
 
 # message size
 MSG_SIZE = 11
