@@ -156,16 +156,6 @@ def init_json():
         with open(MSG_HISTORY_FILENAME, 'w') as history:
             history.write("[]")
 
-# converts bytes to a string
-def bytes_to_string(msg):
-    result = "0x"
-    for byte in msg:
-        bytestring = str(hex(byte))[2:]
-        if len(bytestring) < 2:
-            result += "0"
-        result += bytestring
-    return result
-
 # handles incoming and outgoing serial messages
 def serial_handler(in_msg_queue, out_msg_queue, soti_port):
     # use a write timeout of 1 second to avoid infinite blocking
@@ -203,23 +193,25 @@ def parser(in_msg_queue):
             json.dump(history_json, history, indent=4)
 
 # parses a message
-def parse(msg_raw):
-    msg = bytes_to_string(msg_raw)
-    cmd_id = CmdID(msg_raw[3])
+def parse(msg: bytes):
+	# Extract the serialized fields from the message data.
+    priority = msg[0]
+    sender = NodeID(msg[1])
+    recipient = NodeID(msg[2])
+    cmd_id = CmdID(msg[3])
+    body = msg[4:]
 
-    new_msg_json = {
+    parsed_msg = {
         "time": datetime.datetime.now().strftime("%T"),
-        "priority": int(msg[2:4], 16),
-        "sender-id": NodeID(int(msg[4:6], 16)).name,
-        "destination-id": NodeID(int(msg[6:8], 16)).name,
-        "type": cmd_id.name,
-        # the remaining attributes are command-specific,
-        # and handled on case-by-case basis
+        "priority": priority,
+        "sender-id": sender,
+        "recipient-id": recipient,
+        "cmd": cmd_id.name,
     }
 
-    parse_msg_body(cmd_id, msg_raw[4:], new_msg_json)
+    parsed_msg.body = parse_msg_body(cmd_id, body)
 
-    return new_msg_json
+    return parsed_msg
 
 
 # ----------------------------------------------------------
