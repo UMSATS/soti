@@ -1,17 +1,21 @@
 from cli_utils.constants import CmdID, NodeID
 import struct
 
+
 # Extracts an integer of any width from a bytes object
 def extract_int(data: bytes, index: int, size: int, signed: bool = False) -> int:
     return int.from_bytes(data[index:(size+index)], byteorder='little', signed=signed)
+
 
 # Extracts a 32-bit float from a bytes object
 def extract_float(data: bytes, index: int) -> float:
     return struct.unpack('<f', data[index:(4+index)])[0]
 
+
 # Returns a hexadecimal representation of the provided data
 def to_hex_str(data: bytes) -> str:
     return "0x" + data.hex()
+
 
 # Returns a binary representation of the provided data
 def to_bin_str(data: bytes) -> str:
@@ -21,8 +25,11 @@ def to_bin_str(data: bytes) -> str:
         bit_string += bits.zfill(8)  # pad with zeros to 8 bits
     return "0b" + bit_string
 
+
 # adds command args to the output json
-def parse_msg_body(cmd_id: CmdID, body: bytes, output: dict):
+def parse_msg_body(cmd_id: CmdID, body: bytes) -> dict:
+    output = {}
+    
     match cmd_id:
         
         # Common
@@ -94,3 +101,5 @@ def parse_msg_body(cmd_id: CmdID, body: bytes, output: dict):
             output['well-id'] = body[0]
         case CmdID.PLD_SET_TOLERANCE:
             output['tolerance'] = extract_float(body, 0)
+    
+    return output
