@@ -4,6 +4,7 @@ The main soti front-end script which initializes the terminal and listener threa
 
 import multiprocessing
 import cmd
+import argparse
 import json
 import os
 import serial.tools.list_ports
@@ -45,18 +46,24 @@ class CommandLine(cmd.Cmd):
 
         buffer = bytearray([priority, self.sender_id.value, dest_id.value, cmd_id.value, 0, 0, 0, 0, 0, 0, 0])
 
-        # split arguments (if any) into independent bytes
-        input_args = arg[4:]
+        # handle optional arguments
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--data', type=str, nargs='+')
+        args = parser.parse_args(args[1:])
 
-        # pad input args with zeros to create a full message
-        while len(input_args) < 14:
-            input_args += "0"
+        if args.data:
+            # join independent bytes into a string
+            data = ''.join(args.data)
 
-        # fill the buffer with the input args
-        position = 0
-        for arg_byte in range(4,11):
-            buffer[arg_byte] = int(input_args[position:position+2], 16)
-            position += 2
+            # pad data with zeros to create a full message
+            while len(data) < 14:
+                data += "0"
+
+            # fill the buffer with the data bytes
+            position = 0
+            for arg_byte in range(4,11):
+                buffer[arg_byte] = int(data[position:position+2], 16)
+                position += 2
 
         # send the command + arguments to the serial handler to write to the serial device
         self.out_msg_queue.put(buffer)
