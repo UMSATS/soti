@@ -38,18 +38,27 @@ class CommandLine(cmd.Cmd):
         # (this operation grabs the "0x" prefix and first two hex digits)
         cmd_id = CmdID(int(args[0], 16))
 
-        # now we can use the code to find its priority & destination id
+        # now we can use the code to find its priority
         priority = COMM_INFO[cmd_id]["priority"]
-        dest_id = COMM_INFO[cmd_id]["dest"]
-
-        print(f"\nCommand: {cmd_id.name}\nDestination: {dest_id.get_display_name()}")
-
-        buffer = bytearray([priority, self.sender_id.value, dest_id.value, cmd_id.value, 0, 0, 0, 0, 0, 0, 0])
-
+        
         # handle optional arguments
         parser = argparse.ArgumentParser()
         parser.add_argument('--data', type=str, nargs='+')
+        parser.add_argument('--from', type=str, dest='sender')
+        parser.add_argument('--to', type=str, dest='recipient')
         args = parser.parse_args(args[1:])
+
+        if args.sender:
+            sender_id = NodeID[args.sender]
+        else:
+            sender_id = self.sender_id
+
+        if args.recipient:
+            dest_id = NodeID[args.recipient]
+        else:
+            dest_id = COMM_INFO[cmd_id]["dest"]
+
+        buffer = bytearray([priority, sender_id.value, dest_id.value, cmd_id.value, 0, 0, 0, 0, 0, 0, 0])
 
         if args.data:
             # join independent bytes into a string
@@ -64,6 +73,8 @@ class CommandLine(cmd.Cmd):
             for arg_byte in range(4,11):
                 buffer[arg_byte] = int(data[position:position+2], 16)
                 position += 2
+
+        print(f"\nCommand: {cmd_id.name}\nDestination: {dest_id.get_display_name()}")
 
         # send the command + arguments to the serial handler to write to the serial device
         self.out_msg_queue.put(buffer)
