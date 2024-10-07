@@ -47,9 +47,13 @@ class CommandLine(cmd.Cmd):
             data = args[1]
             options = args[2]
 
+            if "priority" in options:
+                priority = int(options["priority"])
+                if not 0 <= priority <= 32:
+                    raise ArgumentException("Invalid priority")
+            else:
+                priority = COMM_INFO[cmd_id]["priority"]
 
-        # now we can use the code to find its priority
-        priority = COMM_INFO[cmd_id]["priority"]
             if "from" in options:
                 sender_id = NodeID[options["from"]]
             else:
