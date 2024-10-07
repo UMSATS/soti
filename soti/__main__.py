@@ -14,6 +14,8 @@ from utils.constants import SAVE_DATA_DIR, NodeID, CmdID, COMM_INFO, MSG_HISTORY
 from serial_reader import serial_reader
 from message_parser import parser
 
+class ArgumentException(Exception): pass
+
 # ----------------------------------------------------------
 # CMD CLASS
 # ----------------------------------------------------------
@@ -31,53 +33,57 @@ class CommandLine(cmd.Cmd):
 
     def do_send(self, arg):
         """Sends a command."""
-        args = parse_send(arg)
+        try:
+            args = parse_send(arg)
 
-        if args is None: # invalid argument(s), abort the send
-            return
+            if "error" in args: # invalid argument(s)
+                raise ArgumentException(args["error"])
 
-        # first byte of the argument is the command code
-        # (this operation grabs the "0x" prefix and first two hex digits)
-        cmd_id = CmdID(int(args[0], 16))
+            # first byte of the argument is the command code
+            # (this operation grabs the "0x" prefix and first two hex digits)
+            cmd_id = CmdID(int(args[0], 16))
+            
+            # handle data and other arguments
+            data = args[1]
+            options = args[2]
+
 
         # now we can use the code to find its priority
         priority = COMM_INFO[cmd_id]["priority"]
-        
-        # handle data and other arguments
-        data = args[1]
-        options = args[2]
+            if "from" in options:
+                sender_id = NodeID[options["from"]]
+            else:
+                sender_id = self.sender_id
 
-        if "from" in options:
-            sender_id = NodeID[options["from"]]
-        else:
-            sender_id = self.sender_id
+            if "to" in options:
+                dest_id = NodeID[options["to"]]
+            else:
+                dest_id = COMM_INFO[cmd_id]["dest"]
 
-        if "to" in options:
-            dest_id = NodeID[options["to"]]
-        else:
-            dest_id = COMM_INFO[cmd_id]["dest"]
+                if dest_id is None: # common command
+                    raise ArgumentException(f"{cmd_id.name} requires a recipient")
 
-            if dest_id is None: # common command, abort the send
-                print(f"{cmd_id.name} requires a recipient")
-                return
+            buffer = bytearray([priority, sender_id.value, dest_id.value, cmd_id.value, 0, 0, 0, 0, 0, 0, 0])
 
-        buffer = bytearray([priority, sender_id.value, dest_id.value, cmd_id.value, 0, 0, 0, 0, 0, 0, 0])
+            if data:
+                # pad data with zeros to create a full message
+                while len(data) < 14:
+                    data += "0"
 
-        if data:
-            # pad data with zeros to create a full message
-            while len(data) < 14:
-                data += "0"
+                # fill the buffer with the data bytes
+                position = 0
+                for arg_byte in range(4,11):
+                    buffer[arg_byte] = int(data[position:position+2], 16)
+                    position += 2
 
-            # fill the buffer with the data bytes
-            position = 0
-            for arg_byte in range(4,11):
-                buffer[arg_byte] = int(data[position:position+2], 16)
-                position += 2
+            print(f"\nCommand: {cmd_id.name}\nDestination: {dest_id.get_display_name()}")
 
-        print(f"\nCommand: {cmd_id.name}\nDestination: {dest_id.get_display_name()}")
+            # send the command + arguments to the serial handler to write to the serial device
+            self.out_msg_queue.put(buffer)
 
-        # send the command + arguments to the serial handler to write to the serial device
-        self.out_msg_queue.put(buffer)
+        except ArgumentException as e:
+            print(e)
+            return
 
 
     def do_setid(self, arg):
@@ -170,8 +176,7 @@ def parse_send(args: str) -> tuple[int, str, dict]:
                 data += format(int(part, 16), 'x')
         except ValueError:
             # invalid argument
-            print(f"Unknown argument '{part}'")
-            return None
+            return {"error": f"Unknown argument '{part}'"}
     
     return (cmd_id, data, options)
 
