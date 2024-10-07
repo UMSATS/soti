@@ -57,6 +57,10 @@ class CommandLine(cmd.Cmd):
         else:
             dest_id = COMM_INFO[cmd_id]["dest"]
 
+            if dest_id is None: # common command, abort the send
+                print(f"{cmd_id.name} requires a recipient")
+                return
+
         buffer = bytearray([priority, sender_id.value, dest_id.value, cmd_id.value, 0, 0, 0, 0, 0, 0, 0])
 
         if data:
