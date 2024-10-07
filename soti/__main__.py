@@ -4,7 +4,6 @@ The main soti front-end script which initializes the terminal and listener threa
 
 import multiprocessing
 import cmd
-import argparse
 import json
 import os
 import serial.tools.list_ports
@@ -32,7 +31,10 @@ class CommandLine(cmd.Cmd):
 
     def do_send(self, arg):
         """Sends a command."""
-        args = arg.split()
+        args = parse_send(arg)
+
+        if args is None: # invalid argument(s), abort the send
+            return
 
         # first byte of the argument is the command code
         # (this operation grabs the "0x" prefix and first two hex digits)
@@ -41,29 +43,23 @@ class CommandLine(cmd.Cmd):
         # now we can use the code to find its priority
         priority = COMM_INFO[cmd_id]["priority"]
         
-        # handle optional arguments
-        parser = argparse.ArgumentParser()
-        parser.add_argument('--data', type=str, nargs='+')
-        parser.add_argument('--from', type=str, dest='sender')
-        parser.add_argument('--to', type=str, dest='recipient')
-        args = parser.parse_args(args[1:])
+        # handle data and other arguments
+        data = args[1]
+        options = args[2]
 
-        if args.sender:
-            sender_id = NodeID[args.sender]
+        if "from" in options:
+            sender_id = NodeID[options["from"]]
         else:
             sender_id = self.sender_id
 
-        if args.recipient:
-            dest_id = NodeID[args.recipient]
+        if "to" in options:
+            dest_id = NodeID[options["to"]]
         else:
             dest_id = COMM_INFO[cmd_id]["dest"]
 
         buffer = bytearray([priority, sender_id.value, dest_id.value, cmd_id.value, 0, 0, 0, 0, 0, 0, 0])
 
-        if args.data:
-            # join independent bytes into a string
-            data = ''.join(args.data)
-
+        if data:
             # pad data with zeros to create a full message
             while len(data) < 14:
                 data += "0"
@@ -153,6 +149,27 @@ def init_json():
         with open(MSG_HISTORY_PATH, 'w', encoding="utf_8") as history:
             history.write("[]")
 
+def parse_send(args: str) -> tuple[int, str, dict]:
+    parts = args.split()
+
+    cmd_id = parts[0]
+    data = ""
+    options = {}
+
+    for index, part in enumerate(parts[1:]):
+        try:
+            if '=' in part:  # check if key-value pair.
+                key, value = part.split('=')
+                options[key] = value
+            else:
+                # treat as data argument
+                data += format(int(part, 16), 'x')
+        except ValueError:
+            # invalid argument
+            print(f"Unknown argument '{part}'")
+            return None
+    
+    return (cmd_id, data, options)
 
 # ----------------------------------------------------------
 # MAIN APPLICATION CODE
