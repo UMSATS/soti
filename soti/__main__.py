@@ -63,12 +63,12 @@ class CommandLine(cmd.Cmd):
                 if dest_id is None: # common command
                     raise ArgumentException(f"{cmd_id.name} requires a recipient")
 
-            buffer = bytearray([priority, sender_id.value, dest_id.value, cmd_id.value, 0, 0, 0, 0, 0, 0, 0])
+            # create buffer with empty payload
+            buffer = bytearray([priority, sender_id.value, dest_id.value, cmd_id.value] + [0] * 7)
 
             if data:
                 # pad data with zeros to create a full message
-                while len(data) < 14:
-                    data += "0"
+                data = data.ljust(14, "0")
 
                 # fill the buffer with the data bytes
                 position = 0
