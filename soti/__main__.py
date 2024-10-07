@@ -34,34 +34,37 @@ class CommandLine(cmd.Cmd):
     def do_send(self, arg):
         """Sends a command."""
         try:
-            cmd_id, data, options, error = parse_send(arg)
-
-            if error: # invalid argument(s)
-                raise ArgumentException(error)
+            cmd_id, data, options, parse_error = parse_send(arg)
 
             # first byte of the argument is the command code
             # (this operation grabs the "0x" prefix and first two hex digits)
             cmd_id = CmdID(int(cmd_id, 16))
+
+            # get the default values for the command
+            priority = COMM_INFO[cmd_id]["priority"]
+            sender_id = self.sender_id
+            dest_id = COMM_INFO[cmd_id]["dest"]
             
-            # handle data and other arguments
-            if "priority" in options:
-                priority = int(options["priority"])
-                if not 0 <= priority <= 32:
-                    raise ArgumentException("Invalid priority")
-            else:
-                priority = COMM_INFO[cmd_id]["priority"]
+            # override defaults with optional arguments
+            for key in options:
+                if key == "priority":
+                    priority = int(options["priority"])
+                    
+                if key == "from":
+                    sender_id = NodeID[options["from"]]
 
-            if "from" in options:
-                sender_id = NodeID[options["from"]]
-            else:
-                sender_id = self.sender_id
-
-            if "to" in options:
-                dest_id = NodeID[options["to"]]
-            else:
-                dest_id = COMM_INFO[cmd_id]["dest"]
-                if dest_id is None: # common command
-                    raise ArgumentException(f"{cmd_id.name} requires a recipient")
+                if key == "to":
+                    dest_id = NodeID[options["to"]]
+            
+            # raise exceptions for invalid arguments
+            if parse_error:
+                raise ArgumentException(parse_error)
+            
+            if not (0 <= priority <= 32):
+                raise ArgumentException("Invalid priority")
+            
+            if dest_id is None:
+                raise ArgumentException(f"{cmd_id.name} requires a recipient")
 
             # create buffer with empty payload
             buffer = bytearray([priority, sender_id.value, dest_id.value, cmd_id.value] + [0] * 7)
