@@ -34,19 +34,16 @@ class CommandLine(cmd.Cmd):
     def do_send(self, arg):
         """Sends a command."""
         try:
-            args = parse_send(arg)
+            cmd_id, data, options, error = parse_send(arg)
 
-            if "error" in args: # invalid argument(s)
-                raise ArgumentException(args["error"])
+            if error: # invalid argument(s)
+                raise ArgumentException(error)
 
             # first byte of the argument is the command code
             # (this operation grabs the "0x" prefix and first two hex digits)
-            cmd_id = CmdID(int(args[0], 16))
+            cmd_id = CmdID(int(cmd_id, 16))
             
             # handle data and other arguments
-            data = args[1]
-            options = args[2]
-
             if "priority" in options:
                 priority = int(options["priority"])
                 if not 0 <= priority <= 32:
@@ -63,7 +60,6 @@ class CommandLine(cmd.Cmd):
                 dest_id = NodeID[options["to"]]
             else:
                 dest_id = COMM_INFO[cmd_id]["dest"]
-
                 if dest_id is None: # common command
                     raise ArgumentException(f"{cmd_id.name} requires a recipient")
 
@@ -163,12 +159,13 @@ def init_json():
         with open(MSG_HISTORY_PATH, 'w', encoding="utf_8") as history:
             history.write("[]")
 
-def parse_send(args: str) -> tuple[int, str, dict]:
+def parse_send(args: str) -> tuple[int, str, dict, str]:
     parts = args.split()
 
     cmd_id = parts[0]
     data = ""
     options = {}
+    error = ""
 
     for index, part in enumerate(parts[1:]):
         try:
@@ -180,9 +177,9 @@ def parse_send(args: str) -> tuple[int, str, dict]:
                 data += format(int(part, 16), 'x')
         except ValueError:
             # invalid argument
-            return {"error": f"Unknown argument '{part}'"}
+            error = f"Unknown argument '{part}'"
     
-    return (cmd_id, data, options)
+    return cmd_id, data, options, error
 
 # ----------------------------------------------------------
 # MAIN APPLICATION CODE
