@@ -129,9 +129,14 @@ class CommandLine(cmd.Cmd):
         print("The json message history file has been cleared.\n")
 
 
-    def do_help(self, _):
-        """Displays the help string."""
-        print(help_strings.HELP_MESSAGE)
+    def do_help(self, arg):
+        """Displays help messages."""
+        if arg == "send":
+            cmd_method = getattr(self, "do_send")
+            print(f"Description: {cmd_method.__doc__}")
+            print(f"Usage: send <command> [data1 ...] [option=value ...]")
+        else:
+            print(help_strings.HELP_MESSAGE)
 
 
     def do_list(self, _):
