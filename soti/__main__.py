@@ -49,12 +49,14 @@ class CommandLine(cmd.Cmd):
             for key in options:
                 if key == "priority":
                     priority = int(options["priority"])
-                    
-                if key == "from":
-                    sender_id = NodeID[options["from"]]
-
-                if key == "to":
-                    dest_id = NodeID[options["to"]]
+                
+                try:
+                    if key == "from":
+                        sender_id = NodeID[options["from"]]
+                    if key == "to":
+                        dest_id = NodeID[options["to"]]
+                except KeyError:
+                    raise ArgumentException("Invalid node ID")
             
             # raise exceptions for invalid arguments
             if parse_error:
