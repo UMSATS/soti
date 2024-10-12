@@ -175,9 +175,10 @@ def parse_send(args: str) -> tuple[int, str, dict, str]:
             if '=' in part:  # check if key-value pair.
                 key, value = part.split('=')
                 options[key] = value
-            else:
-                # treat as data argument
-                data += format(int(part, 16), 'x')
+            else: # treat as data argument
+                value = format(int(part, 16), 'x')
+                # restore leading zeroes
+                data += value.zfill(len(part) - (2 if '0x' in part else 0))
         except ValueError:
             # invalid argument
             error = f"Unknown argument '{part}'"
