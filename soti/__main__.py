@@ -25,7 +25,7 @@ class CommandLine(cmd.Cmd):
     # initialize the object
     def __init__(self, out_queue):
         super().__init__()
-        self.intro = "\nAvailable commands:\nsend\nsetid\nquery\nclear\nhelp\nlist\nexit\n"
+        self.intro = "\nAvailable commands:\nsend\niamnow\nquery\nclear\nhelp\nlist\nexit\n"
         self.prompt = ">> "
         self.out_msg_queue = out_queue
         self.sender_id = NodeID.CDH
@@ -96,8 +96,8 @@ class CommandLine(cmd.Cmd):
             return
 
 
-    def do_setid(self, arg):
-        """Changes the sender ID."""
+    def do_iamnow(self, arg):
+        """Changes the default sender ID."""
         try:
             node_id = NodeID(int(arg, 0))
             if node_id in NodeID:
@@ -185,15 +185,16 @@ def parse_send(args: str) -> tuple[str, str, dict, str]:
 
     for index, part in enumerate(parts[1:]):
         try:
-            if '=' in part:  # check if key-value pair.
+            # check if key-value pair
+            if '=' in part:  
                 key, value = part.split('=')
                 options[key] = value
-            else: # treat as data argument
+            # else treat as data argument
+            else:
                 value = format(int(part, 16), 'x')
                 # restore leading zeroes
                 data += value.zfill(len(part) - (2 if '0x' in part else 0))
         except ValueError:
-            # invalid argument
             error = f"Unknown argument '{part}'"
     
     return cmd_id, data, options, error
