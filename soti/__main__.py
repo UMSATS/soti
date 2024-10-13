@@ -34,12 +34,17 @@ class CommandLine(cmd.Cmd):
     def do_send(self, arg):
         """Sends a command."""
         try:
-            cmd_id, data, options, parse_error = parse_send(arg)
-
-            # first byte of the argument is the command code
-            # (this operation grabs the "0x" prefix and first two hex digits)
-            cmd_id = CmdID(int(cmd_id, 16))
-
+            cmd_str, data, options, parse_error = parse_send(arg)
+            
+            # resolve command argument to corresponding ID
+            try:
+                cmd_id = CmdID(int(cmd_str, 16))
+            except ValueError:
+                if cmd_str in CmdID.__members__:
+                    cmd_id = CmdID[cmd_str]
+                else:
+                    raise ArgumentException("Invalid command code")
+            
             # get the default values for the command
             priority = COMM_INFO[cmd_id]["priority"]
             sender_id = self.sender_id
@@ -169,7 +174,7 @@ def init_json():
         with open(MSG_HISTORY_PATH, 'w', encoding="utf_8") as history:
             history.write("[]")
 
-def parse_send(args: str) -> tuple[int, str, dict, str]:
+def parse_send(args: str) -> tuple[str, str, dict, str]:
     parts = args.split()
 
     cmd_id = parts[0]
