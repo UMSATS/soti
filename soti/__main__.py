@@ -175,6 +175,7 @@ def init_json():
             history.write("[]")
 
 def parse_send(args: str) -> tuple[str, str, dict, str]:
+    """Parses arguments for `do_send`."""
     parts = args.split()
 
     cmd_id = parts[0]
