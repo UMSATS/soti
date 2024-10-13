@@ -23,7 +23,7 @@ def serial_reader(in_msg_queue, out_msg_queue, soti_port):
             try:
                 # write the appropriate command + arguments to the serial device
                 out_msg = out_msg_queue.get(block=False)
-                print(f"Sending bytes to the satellite: 0x{out_msg.hex()}")
+                print(f"Sending bytes to the satellite: 0x{out_msg.hex().upper()}")
                 ser.write(out_msg)
             except Empty:
                 pass
