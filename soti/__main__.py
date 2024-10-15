@@ -7,6 +7,9 @@ import cmd
 import json
 import os
 import serial.tools.list_ports
+import sys
+
+import serial.tools.list_ports_common
 
 from utils import help_strings
 from utils.constants import SAVE_DATA_DIR, NodeID, CmdID, COMM_INFO, MSG_HISTORY_PATH
@@ -199,6 +202,7 @@ def parse_send(args: str) -> tuple[str, str, dict, str]:
     
     return cmd_id, data, options, error
 
+
 # ----------------------------------------------------------
 # MAIN APPLICATION CODE
 # ----------------------------------------------------------
@@ -217,21 +221,35 @@ if __name__ == "__main__":
     print(SPLASH)
     print("\nWelcome to the SOTI CLI!\n")
 
-    print("Available serial ports:")
+    print("Available Input Sources:")
 
-    ports = serial.tools.list_ports.comports()
-    for port in sorted(ports):
-        print(port.device + " - " + port.description)
+    virtual_port = serial.tools.list_ports_common.ListPortInfo("Virtual")
+    virtual_port.description = "Run in virtual mode for off-board testing."
 
-    selected_port = input("\nEnter the port to receive messages from:")
+    sources = sorted(serial.tools.list_ports.comports()) + [virtual_port]
+
+    for i, port in enumerate(sources):
+        print(str(i) + ": " + port.device + " - " + port.description)
+
+    # Prompt user for valid port.
+    while True:
+        try:
+            source_number = int(input("\nPlease choose an input source:"))
+            if source_number in range(len(sources)):
+                selected_port = sources[source_number]
+                break
+        except ValueError:
+            pass
+        print("Invalid input. Please enter the number corresponding to your selection.")
 
     init_json()
 
+    multiprocessing.set_start_method('spawn')
     in_msg_queue = multiprocessing.Queue() # messages received from SOTI board
     out_msg_queue = multiprocessing.Queue() # messages to send to SOTI board
 
-    multiprocessing.set_start_method('spawn')
-    multiprocessing.Process(target=serial_reader, args=(in_msg_queue, out_msg_queue, selected_port)).start()
-    multiprocessing.Process(target=parser, args=(in_msg_queue,)).start()
+    if not selected_port is virtual_port:
+        multiprocessing.Process(target=serial_reader, args=(in_msg_queue, out_msg_queue, selected_port.device)).start()
+        multiprocessing.Process(target=parser, args=(in_msg_queue,)).start()
 
     CommandLine(out_msg_queue).cmdloop()
