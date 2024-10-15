@@ -214,8 +214,6 @@ _'._ /___/\\____/ /_/ /___/   *_.__       /_/
 
 
 if __name__ == "__main__":
-    multiprocessing.set_start_method('spawn')
-
     print(SPLASH)
     print("\nWelcome to the SOTI CLI!\n")
 
@@ -227,15 +225,13 @@ if __name__ == "__main__":
 
     selected_port = input("\nEnter the port to receive messages from:")
 
+    init_json()
+
     in_msg_queue = multiprocessing.Queue() # messages received from SOTI board
     out_msg_queue = multiprocessing.Queue() # messages to send to SOTI board
 
-    init_json()
-
-    serial_reader_proc = multiprocessing.Process(target=serial_reader, args=(in_msg_queue, out_msg_queue, selected_port))
-    serial_reader_proc.start()
-
-    parser_proc = multiprocessing.Process(target=parser, args=(in_msg_queue,))
-    parser_proc.start()
+    multiprocessing.set_start_method('spawn')
+    multiprocessing.Process(target=serial_reader, args=(in_msg_queue, out_msg_queue, selected_port)).start()
+    multiprocessing.Process(target=parser, args=(in_msg_queue,)).start()
 
     CommandLine(out_msg_queue).cmdloop()
