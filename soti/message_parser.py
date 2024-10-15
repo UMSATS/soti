@@ -8,7 +8,6 @@ from utils.constants import NodeID, CmdID, MSG_HISTORY_PATH
 
 def parser(in_msg_queue):
     """Gets messages from the incoming queue and parses them"""
-    print("Parser Status: Running")
     while True:
         new_msg_raw = in_msg_queue.get()
         new_msg_json = parse_message(new_msg_raw)

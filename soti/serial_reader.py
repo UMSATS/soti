@@ -7,7 +7,6 @@ from utils.constants import MSG_SIZE
 
 def serial_reader(in_msg_queue, out_msg_queue, soti_port):
     """Handles incoming and outgoing serial messages."""
-    print("\nSerial Handler Status: Running")
     # use a write timeout of 1 second to avoid infinite blocking
     with serial.Serial(soti_port, baudrate=115200, write_timeout=1) as ser:
         while True:
