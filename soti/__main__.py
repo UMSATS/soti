@@ -154,13 +154,6 @@ class CommandLine(cmd.Cmd):
 
     def do_exit(self, _):
         """Exits the CLI."""
-        print("\nExiting...")
-        # Terminate all active child processes.
-        active = multiprocessing.active_children()
-        for child in active:
-            child.terminate()
-            child.join()
-        print("Exited successfully.\n")
         return True
 
 
@@ -218,38 +211,43 @@ _'._ /___/\\____/ /_/ /___/   *_.__       /_/
 
 
 if __name__ == "__main__":
-    print(SPLASH)
-    print("\nWelcome to the SOTI CLI!\n")
+    try:
+        print(SPLASH)
+        print("\nWelcome to the SOTI CLI!\n")
 
-    print("Available Input Sources:")
+        print("Available Input Sources:")
 
-    virtual_port = serial.tools.list_ports_common.ListPortInfo("Virtual")
-    virtual_port.description = "Run in virtual mode for off-board testing."
+        virtual_port = serial.tools.list_ports_common.ListPortInfo("Virtual")
+        virtual_port.description = "Run in virtual mode for off-board testing."
 
-    sources = sorted(serial.tools.list_ports.comports()) + [virtual_port]
+        sources = sorted(serial.tools.list_ports.comports()) + [virtual_port]
 
-    for i, port in enumerate(sources):
-        print(str(i) + ": " + port.device + " - " + port.description)
+        for i, port in enumerate(sources):
+            print(str(i) + ": " + port.device + " - " + port.description)
+        print()
 
-    # Prompt user for valid port.
-    while True:
-        try:
-            source_number = int(input("\nPlease choose an input source:"))
-            if source_number in range(len(sources)):
+        # Prompt user for valid port.
+        while True:
+            try:
+                source_number = int(input("Please choose an input source:"))
                 selected_port = sources[source_number]
                 break
-        except ValueError:
-            pass
-        print("Invalid input. Please enter the number corresponding to your selection.")
+            except (ValueError, IndexError):
+                pass
+            print("Invalid input. Please enter the number corresponding to your selection.")
 
-    init_json()
+        init_json()
 
-    multiprocessing.set_start_method('spawn')
-    in_msg_queue = multiprocessing.Queue() # messages received from SOTI board
-    out_msg_queue = multiprocessing.Queue() # messages to send to SOTI board
+        multiprocessing.set_start_method('spawn')
+        in_msg_queue = multiprocessing.Queue() # messages received from SOTI board
+        out_msg_queue = multiprocessing.Queue() # messages to send to SOTI board
 
-    if not selected_port is virtual_port:
-        multiprocessing.Process(target=serial_reader, args=(in_msg_queue, out_msg_queue, selected_port.device)).start()
-        multiprocessing.Process(target=parser, args=(in_msg_queue,)).start()
+        if not selected_port is virtual_port:
+            multiprocessing.Process(target=serial_reader, args=(in_msg_queue, out_msg_queue, selected_port.device), daemon=True).start()
+            multiprocessing.Process(target=parser, args=(in_msg_queue,), daemon=True).start()
 
-    CommandLine(out_msg_queue).cmdloop()
+        CommandLine(out_msg_queue).cmdloop()
+    except KeyboardInterrupt:
+        pass
+
+    print("\nExiting...")
