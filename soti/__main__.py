@@ -26,11 +26,12 @@ class ArgumentException(Exception): pass
 class CommandLine(cmd.Cmd):
     """Represents the command line interface."""
     # initialize the object
-    def __init__(self, out_queue):
+    def __init__(self, out_queue, write_queue):
         super().__init__()
         self.intro = "\nAvailable commands:\nsend\niamnow\nquery\nclear\nhelp\nlist\nexit\n"
         self.prompt = ">> "
         self.out_msg_queue = out_queue
+        self.write_msg_queue = write_queue
         self.sender_id = NodeID.CDH
 
 
@@ -93,6 +94,7 @@ class CommandLine(cmd.Cmd):
 
             # send the command + arguments to the serial handler to write to the serial device
             self.out_msg_queue.put(buffer)
+            self.write_msg_queue.put(buffer)
 
         except ArgumentException as e:
             print(e)
@@ -239,14 +241,14 @@ if __name__ == "__main__":
         init_json()
 
         multiprocessing.set_start_method('spawn')
-        in_msg_queue = multiprocessing.Queue() # messages received from SOTI board
+        write_msg_queue = multiprocessing.Queue() # messages to be written to file
         out_msg_queue = multiprocessing.Queue() # messages to send to SOTI board
 
         if not selected_port is virtual_port:
-            multiprocessing.Process(target=serial_reader, args=(in_msg_queue, out_msg_queue, selected_port.device), daemon=True).start()
-            multiprocessing.Process(target=parser, args=(in_msg_queue,), daemon=True).start()
+            multiprocessing.Process(target=serial_reader, args=(write_msg_queue, out_msg_queue, selected_port.device), daemon=True).start()
+            multiprocessing.Process(target=parser, args=(write_msg_queue,), daemon=True).start()
 
-        CommandLine(out_msg_queue).cmdloop()
+        CommandLine(out_msg_queue, write_msg_queue).cmdloop()
     except KeyboardInterrupt:
         pass
 
