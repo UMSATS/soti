@@ -188,17 +188,25 @@ def init_json(port: str) -> str:
     return file_name
 
 def finalize_json(file_name):
+    """Writes the session length to the log file."""
     with open(SAVE_DATA_DIR / file_name, 'r', encoding="utf_8") as history:
         log = json.load(history)
 
+    # get the datetime corresponding to the file name
     session_start = datetime.datetime.strptime(file_name.strip(".txt"), SESSION_FILE_FORMAT)
+
     total_seconds = int((datetime.datetime.now() - session_start).total_seconds())
     minutes, seconds = divmod(total_seconds, 60)
+    hours, minutes = divmod(minutes, 60)
 
-    log["session-length"] = f"{minutes:02d}:{seconds:02d}"
+    # conditionally add hours and format to two digits
+    session_length = ""
+    if hours:
+        session_length = f"{hours:02d}"
+    log["session-length"] = session_length + f"{minutes:02d}:{seconds:02d}"
 
     with open(SAVE_DATA_DIR / file_name, 'w', encoding="utf_8") as history:
-        json.dump(log, history, indent=4)  # Write back the updated JSON with indentation
+        json.dump(log, history, indent=4)
 
 def parse_send(args: str) -> tuple[str, str, dict, str]:
     """Parses arguments for `do_send`."""
