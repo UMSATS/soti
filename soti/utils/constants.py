@@ -9,6 +9,8 @@ SAVE_DATA_DIR = ROOT_DIR / "save-data"
 
 MSG_HISTORY_PATH = SAVE_DATA_DIR / "messages.json"
 
+SESSION_FILE_FORMAT = "%Y-%m-%d_%H-%M-%S"
+
 # The length of a serialized message in bytes.
 MSG_SIZE = 11
 
