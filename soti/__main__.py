@@ -8,6 +8,7 @@ import json
 import os
 import serial.tools.list_ports
 import sys
+import datetime
 
 import serial.tools.list_ports_common
 
@@ -163,14 +164,25 @@ class CommandLine(cmd.Cmd):
 # FUNCTIONS
 # ----------------------------------------------------------
 
-def init_json():
-    """Initializes the JSON file which logs all messages."""
+def init_json() -> str:
+    """Initializes the file which logs all messages."""
     if not os.path.exists(SAVE_DATA_DIR):
         os.mkdir(SAVE_DATA_DIR)
 
-    if (not os.path.exists(MSG_HISTORY_PATH)) or (os.path.getsize(MSG_HISTORY_PATH) == 0):
-        with open(MSG_HISTORY_PATH, 'w', encoding="utf_8") as history:
-            history.write("[]")
+    session_start = datetime.datetime.now()
+
+    header = {
+        "date": session_start.strftime("%d-%m-%Y"),
+        "time": session_start.strftime("%H:%M"),
+        "messages": []
+    }
+
+    file_name = f"{session_start.strftime("%Y_%m_%d [%H_%M_%S]")}.txt"
+
+    with open(SAVE_DATA_DIR / file_name, 'w', encoding="utf_8") as history:
+        history.write(json.dumps(header))
+
+    return file_name
 
 def parse_send(args: str) -> tuple[str, str, dict, str]:
     """Parses arguments for `do_send`."""
@@ -238,7 +250,7 @@ if __name__ == "__main__":
                 pass
             print("Invalid input. Please enter the number corresponding to your selection.")
 
-        init_json()
+        output_file = init_json()
 
         multiprocessing.set_start_method('spawn')
         write_msg_queue = multiprocessing.Queue() # messages to be written to file
@@ -246,7 +258,7 @@ if __name__ == "__main__":
 
         if not selected_port is virtual_port:
             multiprocessing.Process(target=serial_reader, args=(write_msg_queue, out_msg_queue, selected_port.device), daemon=True).start()
-            multiprocessing.Process(target=parser, args=(write_msg_queue,), daemon=True).start()
+            multiprocessing.Process(target=parser, args=(write_msg_queue, output_file), daemon=True).start()
 
         CommandLine(out_msg_queue, write_msg_queue).cmdloop()
     except KeyboardInterrupt:
