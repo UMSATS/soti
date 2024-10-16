@@ -13,7 +13,7 @@ import datetime
 import serial.tools.list_ports_common
 
 from utils import help_strings
-from utils.constants import SAVE_DATA_DIR, NodeID, CmdID, COMM_INFO, MSG_HISTORY_PATH
+from utils.constants import SAVE_DATA_DIR, NodeID, CmdID, COMM_INFO, MSG_HISTORY_PATH, SESSION_FILE_FORMAT
 
 from serial_reader import serial_reader
 from message_parser import parser
@@ -164,25 +164,41 @@ class CommandLine(cmd.Cmd):
 # FUNCTIONS
 # ----------------------------------------------------------
 
-def init_json() -> str:
-    """Initializes the file which logs all messages."""
+def init_json(port: str) -> str:
+    """Initializes the file which logs the session."""
     if not os.path.exists(SAVE_DATA_DIR):
         os.mkdir(SAVE_DATA_DIR)
 
     session_start = datetime.datetime.now()
+    file_format = session_start.strftime(SESSION_FILE_FORMAT)
 
     header = {
-        "date": session_start.strftime("%d-%m-%Y"),
-        "time": session_start.strftime("%H:%M"),
+        "date": file_format.split("_")[0],
+        "time": file_format.split("_")[1],
+        "session-length": None,
+        "port": port,
         "messages": []
     }
 
-    file_name = f"{session_start.strftime("%Y_%m_%d [%H_%M_%S]")}.txt"
+    file_name = f"{file_format}.txt"
 
     with open(SAVE_DATA_DIR / file_name, 'w', encoding="utf_8") as history:
         history.write(json.dumps(header))
 
     return file_name
+
+def finalize_json(file_name):
+    with open(SAVE_DATA_DIR / file_name, 'r', encoding="utf_8") as history:
+        log = json.load(history)
+
+    session_start = datetime.datetime.strptime(file_name.strip(".txt"), SESSION_FILE_FORMAT)
+    total_seconds = int((datetime.datetime.now() - session_start).total_seconds())
+    minutes, seconds = divmod(total_seconds, 60)
+
+    log["session-length"] = f"{minutes:02d}:{seconds:02d}"
+
+    with open(SAVE_DATA_DIR / file_name, 'w', encoding="utf_8") as history:
+        json.dump(log, history, indent=4)  # Write back the updated JSON with indentation
 
 def parse_send(args: str) -> tuple[str, str, dict, str]:
     """Parses arguments for `do_send`."""
@@ -250,7 +266,7 @@ if __name__ == "__main__":
                 pass
             print("Invalid input. Please enter the number corresponding to your selection.")
 
-        output_file = init_json()
+        output_file_name = init_json(selected_port.device)
 
         multiprocessing.set_start_method('spawn')
         write_msg_queue = multiprocessing.Queue() # messages to be written to file
@@ -258,9 +274,12 @@ if __name__ == "__main__":
 
         if not selected_port is virtual_port:
             multiprocessing.Process(target=serial_reader, args=(write_msg_queue, out_msg_queue, selected_port.device), daemon=True).start()
-            multiprocessing.Process(target=parser, args=(write_msg_queue, output_file), daemon=True).start()
+            multiprocessing.Process(target=parser, args=(write_msg_queue, output_file_name), daemon=True).start()
 
         CommandLine(out_msg_queue, write_msg_queue).cmdloop()
+
+        finalize_json(output_file_name)
+
     except KeyboardInterrupt:
         pass
 
