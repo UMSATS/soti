@@ -5,7 +5,7 @@ import serial
 from utils.constants import MSG_SIZE
 
 
-def serial_reader(in_msg_queue, out_msg_queue, soti_port):
+def serial_reader(write_msg_queue, out_msg_queue, soti_port):
     """Handles incoming and outgoing serial messages."""
     # use a write timeout of 1 second to avoid infinite blocking
     with serial.Serial(soti_port, baudrate=115200, write_timeout=1) as ser:
@@ -16,7 +16,7 @@ def serial_reader(in_msg_queue, out_msg_queue, soti_port):
                 new_msg = ser.read(MSG_SIZE)
                 new_msg_hex = new_msg.hex()
                 print(f"New Message: 0x{new_msg_hex}")
-                in_msg_queue.put(new_msg)
+                write_msg_queue.put(new_msg)
 
             # check for outgoing messages
             try:

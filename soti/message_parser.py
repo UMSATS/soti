@@ -6,10 +6,10 @@ import struct
 from utils.constants import NodeID, CmdID, MSG_HISTORY_PATH
 
 
-def parser(in_msg_queue):
+def parser(write_msg_queue):
     """Gets messages from the incoming queue and parses them"""
     while True:
-        new_msg_raw = in_msg_queue.get()
+        new_msg_raw = write_msg_queue.get()
         new_msg_json = parse_message(new_msg_raw)
         print(f"Message Parsed: {new_msg_json}")
         with open(MSG_HISTORY_PATH, encoding="utf_8") as history:
@@ -17,7 +17,6 @@ def parser(in_msg_queue):
         history_json.append(new_msg_json)
         with open(MSG_HISTORY_PATH, 'w', encoding="utf_8") as history:
             json.dump(history_json, history, indent=4)
-
 
 def parse_message(msg: bytes):
     """Parses a message."""
@@ -31,12 +30,12 @@ def parse_message(msg: bytes):
     parsed_msg = {
         "time": datetime.datetime.now().strftime("%T"),
         "priority": priority,
-        "sender-id": sender,
-        "recipient-id": recipient,
+        "sender-id": sender.name,
+        "recipient-id": recipient.name,
         "cmd": cmd_id.name,
     }
 
-    parsed_msg.body = parse_msg_body(cmd_id, body)
+    parsed_msg["body"] = parse_msg_body(cmd_id, body)
 
     return parsed_msg
 
