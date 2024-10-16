@@ -3,19 +3,19 @@
 import datetime
 import json
 import struct
-from utils.constants import NodeID, CmdID, MSG_HISTORY_PATH
+from utils.constants import NodeID, CmdID, SAVE_DATA_DIR
 
 
-def parser(write_msg_queue):
+def parser(write_msg_queue, output_file):
     """Gets messages from the incoming queue and parses them"""
     while True:
         new_msg_raw = write_msg_queue.get()
         new_msg_json = parse_message(new_msg_raw)
         print(f"Message Parsed: {new_msg_json}")
-        with open(MSG_HISTORY_PATH, encoding="utf_8") as history:
+        with open(SAVE_DATA_DIR / output_file, encoding="utf_8") as history:
             history_json = json.load(history)
-        history_json.append(new_msg_json)
-        with open(MSG_HISTORY_PATH, 'w', encoding="utf_8") as history:
+        history_json["messages"].append(new_msg_json)
+        with open(SAVE_DATA_DIR / output_file, 'w', encoding="utf_8") as history:
             json.dump(history_json, history, indent=4)
 
 def parse_message(msg: bytes):
