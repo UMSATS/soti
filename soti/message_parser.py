@@ -1,22 +1,25 @@
 """Parses messages from the input queue."""
 
 import datetime
-import json
 import struct
+from enum import Enum
 from utils.constants import NodeID, CmdID, SAVE_DATA_DIR
 
 
 def parser(write_msg_queue, output_file_name):
-    """Gets messages from the incoming queue and parses them"""
+    """Writes messages from the queue to the output file."""
     while True:
         new_msg_raw = write_msg_queue.get()
         new_msg_json = parse_message(new_msg_raw)
         print(f"Message Parsed: {new_msg_json}")
+
         with open(SAVE_DATA_DIR / output_file_name, encoding="utf_8") as history:
-            history_json = json.load(history)
-        history_json["messages"].append(new_msg_json)
+            log = history.read()
+
+        log += dict_to_yaml(new_msg_json, 1, True) + "\n"
+
         with open(SAVE_DATA_DIR / output_file_name, 'w', encoding="utf_8") as history:
-            json.dump(history_json, history, indent=4)
+            history.write(log)
 
 def parse_message(msg: bytes):
     """Parses a message."""
@@ -30,14 +33,47 @@ def parse_message(msg: bytes):
     parsed_msg = {
         "time": datetime.datetime.now().strftime("%T"),
         "priority": priority,
-        "sender-id": sender.name,
-        "recipient-id": recipient.name,
-        "cmd": cmd_id.name,
+        "sender-id": sender,
+        "recipient-id": recipient,
+        "cmd": cmd_id,
     }
 
     parsed_msg["body"] = parse_msg_body(cmd_id, body)
 
     return parsed_msg
+
+def dict_to_yaml(d: dict, level: int, listItem: bool = False, recursive: bool = False) -> str:
+    """Converts a dictionary into a YAML entry."""
+    lines = []
+    for index, (key, value) in enumerate(d.items()):
+        # determine value format based on its type
+        if isinstance(value, str) and len(value) > 0:
+            value_formatted = f"'{value}'"
+        elif isinstance(value, dict):
+            if value:
+                # handle nested dictionary recursively
+                value_formatted = f"\n{dict_to_yaml(value, level + 1, False, True)}"
+            else:
+                value_formatted = "null"
+        elif isinstance(value, Enum):
+            value_formatted = value.name
+        else:
+            # don't apply formatting
+            value_formatted = value
+
+        # apply indentation and hyphen
+        line = " " * 2 * level
+        if listItem and index == 0:
+            line = line[:-2] + "- "
+
+        line += f"{key}: {value_formatted}"
+        lines.append(line)
+
+    text = "\n".join(lines)
+    if not recursive:
+        text += "\n"
+
+    return text
 
 
 def extract_int(data: bytes, index: int, size: int, signed: bool = False) -> int:
