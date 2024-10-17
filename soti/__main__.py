@@ -159,7 +159,7 @@ class CommandLine(cmd.Cmd):
 # FUNCTIONS
 # ----------------------------------------------------------
 
-def init_json(port: str) -> str:
+def init_session_log(port: str) -> str:
     """Initializes the file which logs the session."""
     if not os.path.exists(SESSIONS_DIR):
         os.mkdir(SESSIONS_DIR)
@@ -184,7 +184,7 @@ def init_json(port: str) -> str:
 
     return file_name
 
-def finalize_json(file_name):
+def finalize_session_log(file_name):
     """Writes the session length to the log file."""
     with open(SESSIONS_DIR / file_name, encoding="utf_8") as history:
         log = history.read()
@@ -271,7 +271,7 @@ if __name__ == "__main__":
                 pass
             print("Invalid input. Please enter the number corresponding to your selection.")
 
-        output_file_name = init_json(selected_port.device)
+        output_file_name = init_session_log(selected_port.device)
 
         multiprocessing.set_start_method('spawn')
         write_msg_queue = multiprocessing.Queue() # messages to be written to file
@@ -284,7 +284,7 @@ if __name__ == "__main__":
 
         CommandLine(out_msg_queue, write_msg_queue, output_file_name).cmdloop()
 
-        finalize_json(output_file_name)
+        finalize_session_log(output_file_name)
 
     except KeyboardInterrupt:
         pass
