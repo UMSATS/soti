@@ -13,7 +13,7 @@ import datetime
 import serial.tools.list_ports_common
 
 from utils import help_strings
-from utils.constants import SAVE_DATA_DIR, NodeID, CmdID, COMM_INFO, MSG_HISTORY_PATH, SESSION_FILE_FORMAT
+from utils.constants import SESSIONS_DIR, NodeID, CmdID, COMM_INFO, SESSION_FILE_FORMAT
 
 from serial_reader import serial_reader
 from message_parser import parser, dict_to_yaml
@@ -27,12 +27,13 @@ class ArgumentException(Exception): pass
 class CommandLine(cmd.Cmd):
     """Represents the command line interface."""
     # initialize the object
-    def __init__(self, out_queue, write_queue):
+    def __init__(self, out_queue, write_queue, output_file_name):
         super().__init__()
-        self.intro = "\nAvailable commands:\nsend\niamnow\nquery\nclear\nhelp\nlist\nexit\n"
+        self.intro = "\nAvailable commands:\nsend\niamnow\nquery\nhelp\nlist\nexit\n"
         self.prompt = ">> "
         self.out_msg_queue = out_queue
         self.write_msg_queue = write_queue
+        self.file_name = output_file_name
         self.sender_id = NodeID.CDH
 
 
@@ -116,28 +117,22 @@ class CommandLine(cmd.Cmd):
 
 
     def do_query(self, arg):
-        """Queries the telemetry."""
+        """Queries the message history by command name."""
         print(f"\nSearching message history for {arg} commands...")
 
-        with open(MSG_HISTORY_PATH, encoding="utf_8") as history:
-            msgs = json.load(history)
+        with open(SESSIONS_DIR / self.file_name, encoding="utf_8") as history:
+            log = history.read()
 
         num_results = 0
 
-        for msg in msgs:
-            if msg["type"] == arg:
-                num_results += 1
-                print(msg)
+        lines = log.splitlines()
+        for line in lines:
+            line = line.strip()
+            if line.startswith("cmd: "):
+                if line[5:] == arg:
+                    num_results += 1
 
         print(f"\nFound {num_results} results.\n")
-
-
-    def do_clear(self, _):
-        """Clears the json message history file."""
-        with open(MSG_HISTORY_PATH, 'w', encoding="utf_8") as history:
-            history.write("[]")
-            history.flush()
-        print("The json message history file has been cleared.\n")
 
 
     def do_help(self, arg):
@@ -166,8 +161,8 @@ class CommandLine(cmd.Cmd):
 
 def init_json(port: str) -> str:
     """Initializes the file which logs the session."""
-    if not os.path.exists(SAVE_DATA_DIR):
-        os.mkdir(SAVE_DATA_DIR)
+    if not os.path.exists(SESSIONS_DIR):
+        os.mkdir(SESSIONS_DIR)
 
     session_start = datetime.datetime.now()
 
@@ -184,14 +179,14 @@ def init_json(port: str) -> str:
 
     header = dict_to_yaml(header_dict, 0)
 
-    with open(SAVE_DATA_DIR / file_name, 'w', encoding="utf_8") as history:
+    with open(SESSIONS_DIR / file_name, 'w', encoding="utf_8") as history:
         history.write(header)
 
     return file_name
 
 def finalize_json(file_name):
     """Writes the session length to the log file."""
-    with open(SAVE_DATA_DIR / file_name, encoding="utf_8") as history:
+    with open(SESSIONS_DIR / file_name, encoding="utf_8") as history:
         log = history.read()
 
     # get the datetime corresponding to the file name
@@ -207,7 +202,7 @@ def finalize_json(file_name):
     log[2] = f"session-length: '{hours_str}{minutes:02d}:{seconds:02d}'"
     log = "\n".join(log)
 
-    with open(SAVE_DATA_DIR / file_name, 'w', encoding="utf_8") as history:
+    with open(SESSIONS_DIR / file_name, 'w', encoding="utf_8") as history:
         history.write(log)
 
 def parse_send(args: str) -> tuple[str, str, dict, str]:
@@ -286,7 +281,7 @@ if __name__ == "__main__":
             multiprocessing.Process(target=serial_reader, args=(write_msg_queue, out_msg_queue, selected_port.device), daemon=True).start()
             multiprocessing.Process(target=parser, args=(write_msg_queue, output_file_name), daemon=True).start()
 
-        CommandLine(out_msg_queue, write_msg_queue).cmdloop()
+        CommandLine(out_msg_queue, write_msg_queue, output_file_name).cmdloop()
 
         finalize_json(output_file_name)
 

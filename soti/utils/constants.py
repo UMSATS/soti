@@ -7,8 +7,9 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 
 SAVE_DATA_DIR = ROOT_DIR / "save-data"
 
-MSG_HISTORY_PATH = SAVE_DATA_DIR / "messages.json"
+SESSIONS_DIR = SAVE_DATA_DIR / "sessions"
 
+# Used to name session files with datetime.strftime()
 SESSION_FILE_FORMAT = "%Y-%m-%d_%H-%M-%S"
 
 # The length of a serialized message in bytes.

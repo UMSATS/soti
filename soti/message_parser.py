@@ -3,7 +3,7 @@
 import datetime
 import struct
 from enum import Enum
-from utils.constants import NodeID, CmdID, SAVE_DATA_DIR
+from utils.constants import NodeID, CmdID, SESSIONS_DIR
 
 
 def parser(write_msg_queue, output_file_name):
@@ -13,12 +13,12 @@ def parser(write_msg_queue, output_file_name):
         new_msg_json = parse_message(new_msg_raw)
         print(f"Message Parsed: {new_msg_json}")
 
-        with open(SAVE_DATA_DIR / output_file_name, encoding="utf_8") as history:
+        with open(SESSIONS_DIR / output_file_name, encoding="utf_8") as history:
             log = history.read()
 
         log += dict_to_yaml(new_msg_json, 1, True) + "\n"
 
-        with open(SAVE_DATA_DIR / output_file_name, 'w', encoding="utf_8") as history:
+        with open(SESSIONS_DIR / output_file_name, 'w', encoding="utf_8") as history:
             history.write(log)
 
 def parse_message(msg: bytes):
