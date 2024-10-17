@@ -277,9 +277,10 @@ if __name__ == "__main__":
         write_msg_queue = multiprocessing.Queue() # messages to be written to file
         out_msg_queue = multiprocessing.Queue() # messages to send to SOTI board
 
-        if not selected_port is virtual_port:
+        if selected_port is not virtual_port:
             multiprocessing.Process(target=serial_reader, args=(write_msg_queue, out_msg_queue, selected_port.device), daemon=True).start()
-            multiprocessing.Process(target=parser, args=(write_msg_queue, output_file_name), daemon=True).start()
+        
+        multiprocessing.Process(target=parser, args=(write_msg_queue, output_file_name), daemon=True).start()
 
         CommandLine(out_msg_queue, write_msg_queue, output_file_name).cmdloop()
 
