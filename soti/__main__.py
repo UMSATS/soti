@@ -16,7 +16,7 @@ from utils import help_strings
 from utils.constants import SAVE_DATA_DIR, NodeID, CmdID, COMM_INFO, MSG_HISTORY_PATH, SESSION_FILE_FORMAT
 
 from serial_reader import serial_reader
-from message_parser import parser
+from message_parser import parser, dict_to_yaml
 
 class ArgumentException(Exception): pass
 
@@ -170,43 +170,45 @@ def init_json(port: str) -> str:
         os.mkdir(SAVE_DATA_DIR)
 
     session_start = datetime.datetime.now()
-    file_format = session_start.strftime(SESSION_FILE_FORMAT)
 
-    header = {
+    file_format = session_start.strftime(SESSION_FILE_FORMAT)
+    file_name = f"{file_format}.log"
+
+    header_dict = {
         "date": file_format.split("_")[0],
         "time": file_format.split("_")[1],
         "session-length": None,
         "port": port,
-        "messages": []
+        "messages": ""
     }
 
-    file_name = f"{file_format}.txt"
+    header = dict_to_yaml(header_dict, 0)
 
     with open(SAVE_DATA_DIR / file_name, 'w', encoding="utf_8") as history:
-        history.write(json.dumps(header))
+        history.write(header)
 
     return file_name
 
 def finalize_json(file_name):
     """Writes the session length to the log file."""
-    with open(SAVE_DATA_DIR / file_name, 'r', encoding="utf_8") as history:
-        log = json.load(history)
+    with open(SAVE_DATA_DIR / file_name, encoding="utf_8") as history:
+        log = history.read()
 
     # get the datetime corresponding to the file name
-    session_start = datetime.datetime.strptime(file_name.strip(".txt"), SESSION_FILE_FORMAT)
+    session_start = datetime.datetime.strptime(file_name.strip(".log"), SESSION_FILE_FORMAT)
 
     total_seconds = int((datetime.datetime.now() - session_start).total_seconds())
     minutes, seconds = divmod(total_seconds, 60)
     hours, minutes = divmod(minutes, 60)
 
-    # conditionally add hours and format to two digits
-    session_length = ""
-    if hours:
-        session_length = f"{hours:02d}"
-    log["session-length"] = session_length + f"{minutes:02d}:{seconds:02d}"
+    # conditionally add hours and format the time
+    log = log.split("\n")
+    hours_str = f"{hours:02d}:" if hours else ""
+    log[2] = f"session-length: '{hours_str}{minutes:02d}:{seconds:02d}'"
+    log = "\n".join(log)
 
     with open(SAVE_DATA_DIR / file_name, 'w', encoding="utf_8") as history:
-        json.dump(log, history, indent=4)
+        history.write(log)
 
 def parse_send(args: str) -> tuple[str, str, dict, str]:
     """Parses arguments for `do_send`."""
