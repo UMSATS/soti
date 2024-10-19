@@ -169,9 +169,12 @@ def init_session_log(port: str) -> str:
     file_format = session_start.strftime(SESSION_FILE_FORMAT)
     file_name = f"{file_format}.log"
 
+    date = session_start.strftime("%Y-%m-%d")
+    time = session_start.strftime("%H:%M:%S")
+
     header_dict = {
-        "date": file_format.split("_")[0],
-        "time": file_format.split("_")[1],
+        "date": date,
+        "time": time,
         "session-length": None,
         "port": port,
         "messages": ""

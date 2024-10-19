@@ -10,7 +10,7 @@ SAVE_DATA_DIR = ROOT_DIR / "save-data"
 SESSIONS_DIR = SAVE_DATA_DIR / "sessions"
 
 # Used to name session files with datetime.strftime()
-SESSION_FILE_FORMAT = "%Y-%m-%d_%H-%M-%S"
+SESSION_FILE_FORMAT = "%Y-%m-%d_%H%M%S"
 
 # The length of a serialized message in bytes.
 MSG_SIZE = 11
