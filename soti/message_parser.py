@@ -5,42 +5,46 @@ import struct
 from enum import Enum
 from utils.constants import NodeID, CmdID, SESSIONS_DIR
 
+class Message:
+    def __init__(self, msg_bytes: bytes):
+        """Initialize the message from a bytes object."""
+        self.bytes = msg_bytes
+        # serial parameters
+        self.priority = msg_bytes[0]
+        self.sender = NodeID(msg_bytes[1])
+        self.recipient = NodeID(msg_bytes[2])
+        self.cmd_id = CmdID(msg_bytes[3])
+        self.body = msg_bytes[4:]
+        # additional parameters
+        self.time = datetime.datetime.now().strftime("%T")
+        
+    def as_dict(self) -> dict:
+        """Return the message parameters as a dictionary."""
+        return {
+            "time": self.time,
+            "priority": self.priority,
+            "sender-id": self.sender,
+            "recipient-id": self.recipient,
+            "cmd": self.cmd_id,
+            "body": parse_msg_body(self.cmd_id, self.body)
+        }
 
-def parser(write_msg_queue, output_file_name):
+
+def log_messages(write_msg_queue, output_file_name):
     """Writes messages from the queue to the output file."""
     while True:
-        new_msg_raw = write_msg_queue.get()
-        new_msg_json = parse_message(new_msg_raw)
-        print(f"Message Parsed: {new_msg_json}")
+        new_msg = write_msg_queue.get()
+        new_msg_dict = new_msg.as_dict()
+        print(f"Message Parsed: {new_msg_dict}")
 
         with open(SESSIONS_DIR / output_file_name, encoding="utf_8") as history:
             log = history.read()
 
-        log += dict_to_yaml(new_msg_json, 1, True) + "\n"
+        log += dict_to_yaml(new_msg_dict, 1, True) + "\n"
 
         with open(SESSIONS_DIR / output_file_name, 'w', encoding="utf_8") as history:
             history.write(log)
 
-def parse_message(msg: bytes):
-    """Parses a message."""
-    # Extract the serialized fields from the message data.
-    priority = msg[0]
-    sender = NodeID(msg[1])
-    recipient = NodeID(msg[2])
-    cmd_id = CmdID(msg[3])
-    body = msg[4:]
-
-    parsed_msg = {
-        "time": datetime.datetime.now().strftime("%T"),
-        "priority": priority,
-        "sender-id": sender,
-        "recipient-id": recipient,
-        "cmd": cmd_id,
-    }
-
-    parsed_msg["body"] = parse_msg_body(cmd_id, body)
-
-    return parsed_msg
 
 def dict_to_yaml(d: dict, level: int, listItem: bool = False, recursive: bool = False) -> str:
     """Converts a dictionary into a YAML entry."""

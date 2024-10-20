@@ -16,7 +16,7 @@ from utils import help_strings
 from utils.constants import SESSIONS_DIR, NodeID, CmdID, COMM_INFO, SESSION_FILE_FORMAT
 
 from serial_reader import serial_reader
-from message_parser import parser, dict_to_yaml
+from message_parser import log_messages, dict_to_yaml, Message
 
 class ArgumentException(Exception): pass
 
@@ -92,11 +92,13 @@ class CommandLine(cmd.Cmd):
                     buffer[arg_byte] = int(data[position:position+2], 16)
                     position += 2
 
+            msg = Message(buffer)
+
             print(f"\nCommand: {cmd_id.name}\nDestination: {dest_id.get_display_name()}")
 
             # send the command + arguments to the serial handler to write to the serial device
-            self.out_msg_queue.put(buffer)
-            self.write_msg_queue.put(buffer)
+            self.out_msg_queue.put(msg)
+            self.write_msg_queue.put(msg)
 
         except ArgumentException as e:
             print(e)
@@ -128,9 +130,8 @@ class CommandLine(cmd.Cmd):
         lines = log.splitlines()
         for line in lines:
             line = line.strip()
-            if line.startswith("cmd: "):
-                if line[5:] == arg:
-                    num_results += 1
+            if line.startswith("cmd: ") and line[5:] == arg:
+                num_results += 1
 
         print(f"\nFound {num_results} results.\n")
 
@@ -283,7 +284,7 @@ if __name__ == "__main__":
         if selected_port is not virtual_port:
             multiprocessing.Process(target=serial_reader, args=(write_msg_queue, out_msg_queue, selected_port.device), daemon=True).start()
         
-        multiprocessing.Process(target=parser, args=(write_msg_queue, output_file_name), daemon=True).start()
+        multiprocessing.Process(target=log_messages, args=(write_msg_queue, output_file_name), daemon=True).start()
 
         CommandLine(out_msg_queue, write_msg_queue, output_file_name).cmdloop()
 
