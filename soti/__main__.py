@@ -92,7 +92,7 @@ class CommandLine(cmd.Cmd):
                     buffer[arg_byte] = int(data[position:position+2], 16)
                     position += 2
 
-            msg = Message(buffer)
+            msg = Message(buffer, "user")
 
             print(f"\nCommand: {cmd_id.name}\nDestination: {dest_id.get_display_name()}")
 

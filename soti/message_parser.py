@@ -6,7 +6,7 @@ from enum import Enum
 from utils.constants import NodeID, CmdID, SESSIONS_DIR
 
 class Message:
-    def __init__(self, msg_bytes: bytes):
+    def __init__(self, msg_bytes: bytes, source: str):
         """Initialize the message from a bytes object."""
         self.bytes = msg_bytes
         # serial parameters
@@ -17,11 +17,13 @@ class Message:
         self.body = msg_bytes[4:]
         # additional parameters
         self.time = datetime.datetime.now().strftime("%T")
+        self.source = source
         
     def as_dict(self) -> dict:
         """Return the message parameters as a dictionary."""
         return {
             "time": self.time,
+            "source": self.source,
             "priority": self.priority,
             "sender-id": self.sender,
             "recipient-id": self.recipient,
