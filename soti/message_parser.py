@@ -37,7 +37,8 @@ def log_messages(write_msg_queue, output_file_name):
     while True:
         new_msg = write_msg_queue.get()
         new_msg_dict = new_msg.as_dict()
-        print(f"Message Parsed: {new_msg_dict}")
+        if new_msg.source == "port":
+            print(f"Message Parsed: {new_msg_dict}")
 
         with open(SESSIONS_DIR / output_file_name, encoding="utf_8") as history:
             log = history.read()
