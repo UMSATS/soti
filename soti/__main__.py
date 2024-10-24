@@ -13,7 +13,10 @@ import datetime
 import serial.tools.list_ports_common
 
 from utils import help_strings
-from utils.constants import SESSIONS_DIR, NodeID, CmdID, COMM_INFO, SESSION_FILE_FORMAT
+from utils.constants import (
+    SAVE_DATA_DIR, SESSIONS_DIR, SESSION_FILE_FORMAT,
+    NodeID, CmdID, COMM_INFO
+)
 
 from serial_reader import serial_reader
 from message_parser import log_messages, dict_to_yaml, Message
@@ -162,6 +165,8 @@ class CommandLine(cmd.Cmd):
 
 def init_session_log(port: str) -> str:
     """Initializes the file which logs the session."""
+    if not os.path.exists(SAVE_DATA_DIR):
+        os.mkdir(SAVE_DATA_DIR)
     if not os.path.exists(SESSIONS_DIR):
         os.mkdir(SESSIONS_DIR)
 
