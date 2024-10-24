@@ -1,44 +1,86 @@
 """Parses messages from the input queue."""
 
 import datetime
-import json
 import struct
-from utils.constants import NodeID, CmdID, MSG_HISTORY_PATH
+from enum import Enum
+from utils.constants import NodeID, CmdID, SESSIONS_DIR
+
+class Message:
+    def __init__(self, msg_bytes: bytes, source: str):
+        """Initialize the message from a bytes object."""
+        self.bytes = msg_bytes
+        # serial parameters
+        self.priority = msg_bytes[0]
+        self.sender = NodeID(msg_bytes[1])
+        self.recipient = NodeID(msg_bytes[2])
+        self.cmd_id = CmdID(msg_bytes[3])
+        self.body = msg_bytes[4:]
+        # additional parameters
+        self.time = datetime.datetime.now().strftime("%T")
+        self.source = source
+        
+    def as_dict(self) -> dict:
+        """Return the message parameters as a dictionary."""
+        return {
+            "time": self.time,
+            "source": self.source,
+            "priority": self.priority,
+            "sender-id": self.sender,
+            "recipient-id": self.recipient,
+            "cmd": self.cmd_id,
+            "body": parse_msg_body(self.cmd_id, self.body)
+        }
 
 
-def parser(in_msg_queue):
-    """Gets messages from the incoming queue and parses them"""
+def log_messages(write_msg_queue, output_file_name):
+    """Writes messages from the queue to the output file."""
     while True:
-        new_msg_raw = in_msg_queue.get()
-        new_msg_json = parse_message(new_msg_raw)
-        print(f"Message Parsed: {new_msg_json}")
-        with open(MSG_HISTORY_PATH, encoding="utf_8") as history:
-            history_json = json.load(history)
-        history_json.append(new_msg_json)
-        with open(MSG_HISTORY_PATH, 'w', encoding="utf_8") as history:
-            json.dump(history_json, history, indent=4)
+        new_msg = write_msg_queue.get()
+        new_msg_dict = new_msg.as_dict()
+        if new_msg.source == "port":
+            print(f"Message Parsed: {new_msg_dict}")
+
+        with open(SESSIONS_DIR / output_file_name, encoding="utf_8") as history:
+            log = history.read()
+
+        log += dict_to_yaml(new_msg_dict, 1, True) + "\n"
+
+        with open(SESSIONS_DIR / output_file_name, 'w', encoding="utf_8") as history:
+            history.write(log)
 
 
-def parse_message(msg: bytes):
-    """Parses a message."""
-    # Extract the serialized fields from the message data.
-    priority = msg[0]
-    sender = NodeID(msg[1])
-    recipient = NodeID(msg[2])
-    cmd_id = CmdID(msg[3])
-    body = msg[4:]
+def dict_to_yaml(d: dict, level: int, listItem: bool = False, recursive: bool = False) -> str:
+    """Converts a dictionary into a YAML entry."""
+    lines = []
+    for index, (key, value) in enumerate(d.items()):
+        # determine value format based on its type
+        if isinstance(value, str) and len(value) > 0:
+            value_formatted = f"'{value}'"
+        elif isinstance(value, dict):
+            if value:
+                # handle nested dictionary recursively
+                value_formatted = f"\n{dict_to_yaml(value, level + 1, False, True)}"
+            else:
+                value_formatted = "null"
+        elif isinstance(value, Enum):
+            value_formatted = value.name
+        else:
+            # don't apply formatting
+            value_formatted = value
 
-    parsed_msg = {
-        "time": datetime.datetime.now().strftime("%T"),
-        "priority": priority,
-        "sender-id": sender,
-        "recipient-id": recipient,
-        "cmd": cmd_id.name,
-    }
+        # apply indentation and hyphen
+        line = " " * 2 * level
+        if listItem and index == 0:
+            line = line[:-2] + "- "
 
-    parsed_msg.body = parse_msg_body(cmd_id, body)
+        line += f"{key}: {value_formatted}"
+        lines.append(line)
 
-    return parsed_msg
+    text = "\n".join(lines)
+    if not recursive:
+        text += "\n"
+
+    return text
 
 
 def extract_int(data: bytes, index: int, size: int, signed: bool = False) -> int:

@@ -8,14 +8,18 @@ import json
 import os
 import serial.tools.list_ports
 import sys
+import datetime
 
 import serial.tools.list_ports_common
 
 from utils import help_strings
-from utils.constants import SAVE_DATA_DIR, NodeID, CmdID, COMM_INFO, MSG_HISTORY_PATH
+from utils.constants import (
+    SAVE_DATA_DIR, SESSIONS_DIR, SESSION_FILE_FORMAT,
+    NodeID, CmdID, COMM_INFO
+)
 
 from serial_reader import serial_reader
-from message_parser import parser
+from message_parser import log_messages, dict_to_yaml, Message
 
 class ArgumentException(Exception): pass
 
@@ -26,11 +30,13 @@ class ArgumentException(Exception): pass
 class CommandLine(cmd.Cmd):
     """Represents the command line interface."""
     # initialize the object
-    def __init__(self, out_queue):
+    def __init__(self, out_queue, write_queue, output_file_name):
         super().__init__()
-        self.intro = "\nAvailable commands:\nsend\niamnow\nquery\nclear\nhelp\nlist\nexit\n"
+        self.intro = "\nAvailable commands:\nsend\niamnow\nquery\nhelp\nlist\nexit\n"
         self.prompt = ">> "
         self.out_msg_queue = out_queue
+        self.write_msg_queue = write_queue
+        self.file_name = output_file_name
         self.sender_id = NodeID.CDH
 
 
@@ -89,10 +95,13 @@ class CommandLine(cmd.Cmd):
                     buffer[arg_byte] = int(data[position:position+2], 16)
                     position += 2
 
+            msg = Message(buffer, "user")
+
             print(f"\nCommand: {cmd_id.name}\nDestination: {dest_id.get_display_name()}")
 
             # send the command + arguments to the serial handler to write to the serial device
-            self.out_msg_queue.put(buffer)
+            self.out_msg_queue.put(msg)
+            self.write_msg_queue.put(msg)
 
         except ArgumentException as e:
             print(e)
@@ -113,28 +122,21 @@ class CommandLine(cmd.Cmd):
 
 
     def do_query(self, arg):
-        """Queries the telemetry."""
+        """Queries the message history by command name."""
         print(f"\nSearching message history for {arg} commands...")
 
-        with open(MSG_HISTORY_PATH, encoding="utf_8") as history:
-            msgs = json.load(history)
+        with open(SESSIONS_DIR / self.file_name, encoding="utf_8") as history:
+            log = history.read()
 
         num_results = 0
 
-        for msg in msgs:
-            if msg["type"] == arg:
+        lines = log.splitlines()
+        for line in lines:
+            line = line.strip()
+            if line.startswith("cmd: ") and line[5:] == arg:
                 num_results += 1
-                print(msg)
 
         print(f"\nFound {num_results} results.\n")
-
-
-    def do_clear(self, _):
-        """Clears the json message history file."""
-        with open(MSG_HISTORY_PATH, 'w', encoding="utf_8") as history:
-            history.write("[]")
-            history.flush()
-        print("The json message history file has been cleared.\n")
 
 
     def do_help(self, arg):
@@ -161,14 +163,56 @@ class CommandLine(cmd.Cmd):
 # FUNCTIONS
 # ----------------------------------------------------------
 
-def init_json():
-    """Initializes the JSON file which logs all messages."""
+def init_session_log(port: str) -> str:
+    """Initializes the file which logs the session."""
     if not os.path.exists(SAVE_DATA_DIR):
         os.mkdir(SAVE_DATA_DIR)
+    if not os.path.exists(SESSIONS_DIR):
+        os.mkdir(SESSIONS_DIR)
 
-    if (not os.path.exists(MSG_HISTORY_PATH)) or (os.path.getsize(MSG_HISTORY_PATH) == 0):
-        with open(MSG_HISTORY_PATH, 'w', encoding="utf_8") as history:
-            history.write("[]")
+    session_start = datetime.datetime.now()
+
+    file_format = session_start.strftime(SESSION_FILE_FORMAT)
+    file_name = f"{file_format}.log"
+
+    date = session_start.strftime("%Y-%m-%d")
+    time = session_start.strftime("%H:%M:%S")
+
+    header_dict = {
+        "date": date,
+        "time": time,
+        "session-length": None,
+        "port": port,
+        "messages": ""
+    }
+
+    header = dict_to_yaml(header_dict, 0)
+
+    with open(SESSIONS_DIR / file_name, 'w', encoding="utf_8") as history:
+        history.write(header)
+
+    return file_name
+
+def finalize_session_log(file_name):
+    """Writes the session length to the log file."""
+    with open(SESSIONS_DIR / file_name, encoding="utf_8") as history:
+        log = history.read()
+
+    # get the datetime corresponding to the file name
+    session_start = datetime.datetime.strptime(file_name.strip(".log"), SESSION_FILE_FORMAT)
+
+    total_seconds = int((datetime.datetime.now() - session_start).total_seconds())
+    minutes, seconds = divmod(total_seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+
+    # conditionally add hours and format the time
+    log = log.split("\n")
+    hours_str = f"{hours:02d}:" if hours else ""
+    log[2] = f"session-length: '{hours_str}{minutes:02d}:{seconds:02d}'"
+    log = "\n".join(log)
+
+    with open(SESSIONS_DIR / file_name, 'w', encoding="utf_8") as history:
+        history.write(log)
 
 def parse_send(args: str) -> tuple[str, str, dict, str]:
     """Parses arguments for `do_send`."""
@@ -236,17 +280,21 @@ if __name__ == "__main__":
                 pass
             print("Invalid input. Please enter the number corresponding to your selection.")
 
-        init_json()
+        output_file_name = init_session_log(selected_port.device)
 
         multiprocessing.set_start_method('spawn')
-        in_msg_queue = multiprocessing.Queue() # messages received from SOTI board
+        write_msg_queue = multiprocessing.Queue() # messages to be written to file
         out_msg_queue = multiprocessing.Queue() # messages to send to SOTI board
 
-        if not selected_port is virtual_port:
-            multiprocessing.Process(target=serial_reader, args=(in_msg_queue, out_msg_queue, selected_port.device), daemon=True).start()
-            multiprocessing.Process(target=parser, args=(in_msg_queue,), daemon=True).start()
+        if selected_port is not virtual_port:
+            multiprocessing.Process(target=serial_reader, args=(write_msg_queue, out_msg_queue, selected_port.device), daemon=True).start()
+        
+        multiprocessing.Process(target=log_messages, args=(write_msg_queue, output_file_name), daemon=True).start()
 
-        CommandLine(out_msg_queue).cmdloop()
+        CommandLine(out_msg_queue, write_msg_queue, output_file_name).cmdloop()
+
+        finalize_session_log(output_file_name)
+
     except KeyboardInterrupt:
         pass
 
