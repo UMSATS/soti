@@ -128,7 +128,7 @@ def to_bin_str(data: bytes) -> str:
     """Returns a binary representation of the provided data."""
     bit_string = ''
     for byte in data:
-        bits = bin(byte)[2:]  # remove '0b' prefix
+        bits = str(bin(byte))[2:]  # remove '0b' prefix
         bit_string += bits.zfill(8)  # pad with zeros to 8 bits
     return "0b" + bit_string
 

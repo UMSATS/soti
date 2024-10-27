@@ -17,13 +17,13 @@ def serial_reader(write_msg_queue, out_msg_queue, soti_port):
                 new_msg_bytes = ser.read(MSG_SIZE)
                 new_msg_hex = new_msg_bytes.hex()
                 print(f"New Message: 0x{new_msg_hex}")
-                new_msg = Message(new_msg_bytes, "port")
+                new_msg = Message.deserialize("port", new_msg_bytes)
                 write_msg_queue.put(new_msg)
 
             # check for outgoing messages
             try:
                 # write the appropriate command + arguments to the serial device
-                out_msg = out_msg_queue.get(block=False).bytes
+                out_msg = out_msg_queue.get(block=False).serialize()
                 print(f"Sending bytes to the satellite: 0x{out_msg.hex().upper()}")
                 ser.write(out_msg)
             except Empty:
