@@ -3,7 +3,7 @@
 from queue import Empty
 import serial
 from utils.constants import MSG_SIZE
-from message_parser import Message
+from message import Message
 
 
 def serial_reader(write_msg_queue, out_msg_queue, soti_port):
