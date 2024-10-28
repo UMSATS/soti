@@ -6,17 +6,23 @@ import struct
 from enum import Enum
 from utils.constants import NodeID, CmdID, SAVE_DATA_DIR, SESSIONS_DIR, SESSION_FILE_FORMAT
 
-def init_session_log(port: str) -> str:
+def init_session_log(port: str, file_name = None) -> str:
     """Initializes the file which logs the session."""
     if not os.path.exists(SAVE_DATA_DIR):
         os.mkdir(SAVE_DATA_DIR)
     if not os.path.exists(SESSIONS_DIR):
         os.mkdir(SESSIONS_DIR)
 
-    session_start = datetime.datetime.now()
+    if file_name:
+        # use the file name to determine the time
+        session_start = datetime.datetime.strptime(file_name.strip(".log"), SESSION_FILE_FORMAT)
 
-    file_format = session_start.strftime(SESSION_FILE_FORMAT)
-    file_name = f"{file_format}.log"
+    else:
+        # generate a file name based on the current time
+        session_start = datetime.datetime.now()
+
+        file_format = session_start.strftime(SESSION_FILE_FORMAT)
+        file_name = f"{file_format}.log"
 
     date = session_start.strftime("%Y-%m-%d")
     time = session_start.strftime("%H:%M:%S")
@@ -36,7 +42,7 @@ def init_session_log(port: str) -> str:
 
     return file_name
 
-def finalize_session_log(file_name):
+def finalize_session_log(file_name: str):
     """Writes the session length to the log file."""
     with open(SESSIONS_DIR / file_name, encoding="utf_8") as history:
         log = history.read()
@@ -58,20 +64,31 @@ def finalize_session_log(file_name):
         history.write(log)
 
 
-def log_messages(write_msg_queue, output_file_name):
+def log_messages(write_msg_queue, port, file_name_pipe):
     """Writes messages from the queue to the output file."""
+    log = ""
+    # initialize the file and send its name to main
+    file_name = init_session_log(port)
+    file_name_pipe.send(file_name)
     while True:
         new_msg = write_msg_queue.get()
         new_msg_dict = new_msg.as_dict()
         if new_msg.source == "port":
             print(f"Message Parsed: {new_msg_dict}")
 
-        with open(SESSIONS_DIR / output_file_name, encoding="utf_8") as history:
-            log = history.read()
+        # open in append mode with read capability
+        with open(SESSIONS_DIR / file_name, 'a+', encoding="utf_8") as history:
+            new_log = history.read()
 
-        log += dict_to_yaml(new_msg_dict, 1, True) + "\n"
+            if log and not new_log:
+                # file was lost, regenerate it with the same name
+                init_session_log(port, file_name)
+            else:
+                log = new_log
 
-        with open(SESSIONS_DIR / output_file_name, 'w', encoding="utf_8") as history:
+            # overwrite with the newest message
+            log += dict_to_yaml(new_msg_dict, 1, True) + "\n"
+            history.seek(0)
             history.write(log)
 
 
