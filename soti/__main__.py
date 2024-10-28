@@ -222,16 +222,28 @@ if __name__ == "__main__":
                 pass
             print("Invalid input. Please enter the number corresponding to your selection.")
 
-        output_file_name = init_session_log(selected_port.device)
-
         multiprocessing.set_start_method('spawn')
         write_msg_queue = multiprocessing.Queue() # messages to be written to file
         out_msg_queue = multiprocessing.Queue() # messages to send to SOTI board
 
         if selected_port is not virtual_port:
-            multiprocessing.Process(target=serial_reader, args=(write_msg_queue, out_msg_queue, selected_port.device), daemon=True).start()
+            multiprocessing.Process(target=serial_reader, args=(
+                write_msg_queue,
+                out_msg_queue,
+                selected_port.device
+            ), daemon=True).start()
         
-        multiprocessing.Process(target=log_messages, args=(write_msg_queue, output_file_name), daemon=True).start()
+        file_name_receiver, file_name_sender = multiprocessing.Pipe()
+
+        multiprocessing.Process(target=log_messages, args=(
+            write_msg_queue,
+            selected_port.device,
+            file_name_sender
+        ), daemon=True).start()
+
+        # get the file name from the logger process
+        output_file_name = file_name_receiver.recv()
+        file_name_receiver.close()
 
         CommandLine(out_msg_queue, write_msg_queue, output_file_name).cmdloop()
 
