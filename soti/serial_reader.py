@@ -17,7 +17,8 @@ def serial_reader(write_msg_queue, out_msg_queue, soti_port):
                 new_msg_bytes = ser.read(MSG_SIZE)
                 new_msg_hex = new_msg_bytes.hex()
                 print(f"New Message: 0x{new_msg_hex}")
-                new_msg = Message.deserialize("port", new_msg_bytes)
+                new_msg = Message.deserialize(new_msg_bytes)
+                new_msg.source = "port"
                 write_msg_queue.put(new_msg)
 
             # check for outgoing messages
