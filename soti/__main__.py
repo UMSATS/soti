@@ -80,16 +80,16 @@ class CommandLine(cmd.Cmd):
             if dest_id is None:
                 raise ArgumentException(f"{cmd_id.name} requires a recipient")
 
-            if data:
-                # truncate extra numbers
-                data = data[:14]
-                # pad data with zeros to create a full message
-                data = data.ljust(14, "0")
+            # truncate excess data arguments
+            data = data[:14]
+            
+            # pad data with zeros to create a full message
+            data = data.ljust(14, "0")
 
             print(f"\nCommand: {cmd_id.name}\nDestination: {dest_id.get_display_name()}")
 
             # create a message using the arguments
-            msg = Message("user", priority, sender_id, dest_id, cmd_id, bytes.fromhex(data))
+            msg = Message(priority, sender_id, dest_id, cmd_id, bytes.fromhex(data), source="user")
 
             # send the message to be written to the serial device and logged
             self.out_msg_queue.put(msg)
