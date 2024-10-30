@@ -28,12 +28,13 @@ class ArgumentException(Exception): pass
 class CommandLine(cmd.Cmd):
     """Represents the command line interface."""
     # initialize the object
-    def __init__(self, out_queue, write_queue):
+    def __init__(self, out_queue, write_queue, virtual_mode):
         super().__init__()
         self.intro = "\nAvailable commands:\nsend\niamnow\nquery\nhelp\nlist\nexit\n"
         self.prompt = ">> "
         self.out_msg_queue = out_queue
         self.write_msg_queue = write_queue
+        self.virtual_mode = virtual_mode
         self.sender_id = NodeID.CDH
 
 
@@ -91,9 +92,9 @@ class CommandLine(cmd.Cmd):
             msg = Message(priority, sender_id, dest_id, cmd_id, bytes.fromhex(data), source="user")
 
             # send the message to be written to the serial device and logged
-            self.out_msg_queue.put(msg)
             self.write_msg_queue.put(msg)
-
+            if not virtual_mode:
+                self.out_msg_queue.put(msg)
 
         except ArgumentException as e:
             print(e)
@@ -221,6 +222,8 @@ if __name__ == "__main__":
                 pass
             print("Invalid input. Please enter the number corresponding to your selection.")
 
+        virtual_mode = selected_port is virtual_port
+
         multiprocessing.set_start_method('spawn')
         write_msg_queue = multiprocessing.Queue() # messages to be written to file
         out_msg_queue = multiprocessing.Queue() # messages to send to SOTI board
@@ -232,7 +235,7 @@ if __name__ == "__main__":
         processes = []
 
         # create the serial handler process
-        if selected_port is not virtual_port:
+        if not virtual_mode:
             processes.append(multiprocessing.Process(
                 target=serial_reader,
                 args=(
@@ -259,7 +262,7 @@ if __name__ == "__main__":
         for p in processes:
             p.start()
 
-        CommandLine(out_msg_queue, write_msg_queue).cmdloop()
+        CommandLine(out_msg_queue, write_msg_queue, virtual_mode).cmdloop()
 
     except KeyboardInterrupt:
         pass
