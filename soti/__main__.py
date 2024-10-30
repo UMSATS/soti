@@ -28,13 +28,12 @@ class ArgumentException(Exception): pass
 class CommandLine(cmd.Cmd):
     """Represents the command line interface."""
     # initialize the object
-    def __init__(self, out_queue, write_queue, output_file_name):
+    def __init__(self, out_queue, write_queue):
         super().__init__()
         self.intro = "\nAvailable commands:\nsend\niamnow\nquery\nhelp\nlist\nexit\n"
         self.prompt = ">> "
         self.out_msg_queue = out_queue
         self.write_msg_queue = write_queue
-        self.file_name = output_file_name
         self.sender_id = NodeID.CDH
 
 
@@ -114,8 +113,8 @@ class CommandLine(cmd.Cmd):
             print("Invalid args.")
 
 
-    def do_query(self, arg):
-        """Queries the message history by command name."""
+    """ def do_query(self, arg):
+        Queries the message history by command name.
         print(f"\nSearching message history for {arg} commands...")
 
         with open(SESSIONS_DIR / self.file_name, encoding="utf_8") as history:
@@ -129,7 +128,7 @@ class CommandLine(cmd.Cmd):
             if line.startswith("cmd: ") and line[5:] == arg:
                 num_results += 1
 
-        print(f"\nFound {num_results} results.\n")
+        print(f"\nFound {num_results} results.\n") """
 
 
     def do_help(self, arg):
@@ -226,30 +225,56 @@ if __name__ == "__main__":
         write_msg_queue = multiprocessing.Queue() # messages to be written to file
         out_msg_queue = multiprocessing.Queue() # messages to send to SOTI board
 
+        # pipes to send exit signals to the processes
+        serial_stop_sender, serial_stop_receiver = multiprocessing.Pipe()
+        logger_stop_sender, logger_stop_receiver = multiprocessing.Pipe()
+
+        processes = []
+
+        # create the serial handler process
         if selected_port is not virtual_port:
-            multiprocessing.Process(target=serial_reader, args=(
+            processes.append(multiprocessing.Process(
+                target=serial_reader,
+                args=(
+                    write_msg_queue,
+                    out_msg_queue,
+                    serial_stop_receiver,
+                    selected_port.device
+                    ),
+                daemon=True)
+            )
+
+        # create the session logger process
+        processes.append(multiprocessing.Process(
+            target=log_messages,
+            args=(
                 write_msg_queue,
-                out_msg_queue,
+                logger_stop_receiver,
                 selected_port.device
-            ), daemon=True).start()
-        
-        file_name_receiver, file_name_sender = multiprocessing.Pipe()
+            ),
+            daemon=True)
+        )
 
-        multiprocessing.Process(target=log_messages, args=(
-            write_msg_queue,
-            selected_port.device,
-            file_name_sender
-        ), daemon=True).start()
+        # start the processes
+        for p in processes:
+            p.start()
 
-        # get the file name from the logger process
-        output_file_name = file_name_receiver.recv()
-        file_name_receiver.close()
-
-        CommandLine(out_msg_queue, write_msg_queue, output_file_name).cmdloop()
-
-        finalize_session_log(output_file_name)
+        CommandLine(out_msg_queue, write_msg_queue).cmdloop()
 
     except KeyboardInterrupt:
         pass
 
-    print("\nExiting...")
+    finally:
+        # tell the processes to stop
+        serial_stop_sender.send("STOP")
+        logger_stop_sender.send("STOP")
+
+        print("\nProcessing remaining messages...")
+        while not (write_msg_queue.empty() and out_msg_queue.empty()):
+            pass
+
+        for p in processes:
+            # block until both processes exit
+            p.join()
+
+        print("\nExiting...")
