@@ -3,6 +3,7 @@
 import datetime
 import os
 import struct
+from queue import Empty
 from enum import Enum
 from utils.constants import NodeID, CmdID, SAVE_DATA_DIR, SESSIONS_DIR, SESSION_FILE_FORMAT
 
@@ -64,32 +65,57 @@ def finalize_session_log(file_name: str):
         history.write(log)
 
 
-def log_messages(write_msg_queue, port, file_name_pipe):
+def log_messages(write_msg_queue, stop_pipe, port):
     """Writes messages from the queue to the output file."""
-    log = ""
-    # initialize the file and send its name to main
     file_name = init_session_log(port)
-    file_name_pipe.send(file_name)
-    while True:
-        new_msg = write_msg_queue.get()
-        new_msg_dict = new_msg.as_dict()
-        if new_msg.source == "port":
-            print(f"Message Parsed: {new_msg_dict}")
+    try:
+        with open(SESSIONS_DIR / file_name, encoding="utf_8") as history:
+            log = history.read()
 
-        # open in append mode with read capability
-        with open(SESSIONS_DIR / file_name, 'a+', encoding="utf_8") as history:
-            new_log = history.read()
+        active = True
+        while active or not write_msg_queue.empty():
+            if stop_pipe.poll():
+                # the process will now exit once the queue is empty
+                active = False
 
-            if log and not new_log:
-                # file was lost, regenerate it with the same name
-                init_session_log(port, file_name)
-            else:
-                log = new_log
+            try:
+                new_msg = write_msg_queue.get(block=False)
 
-            # overwrite with the newest message
-            log += dict_to_yaml(new_msg_dict, 1, True) + "\n"
-            history.seek(0)
+                new_msg_dict = new_msg.as_dict()
+                if new_msg.source == "port":
+                    print(f"Message Parsed: {new_msg_dict}")
+
+                # opening in a+ mode will create the file if it was removed
+                with open(SESSIONS_DIR / file_name, 'a+', encoding="utf_8") as history:
+                    new_log = history.read()
+                    
+                if log and not new_log:
+                    # empty file, regenerate it with the same name
+                    init_session_log(port, file_name)
+                else:
+                    log = new_log
+
+                # append the new message
+                log += dict_to_yaml(new_msg_dict, 1, True) + "\n"
+                
+                with open(SESSIONS_DIR / file_name, 'w', encoding="utf_8") as history:
+                    history.write(log)
+
+            except Empty:
+                pass
+
+    except KeyboardInterrupt:
+        # abort the remaining messages
+        while not write_msg_queue.empty():
+            write_msg_queue.get()
+
+    finally:
+        # ensure the file exists and contains the log
+        with open(SESSIONS_DIR / file_name, 'w', encoding="utf_8") as history:
             history.write(log)
+
+        finalize_session_log(file_name)
+        stop_pipe.close()
 
 
 def dict_to_yaml(d: dict, level: int, listItem: bool = False, recursive: bool = False) -> str:
