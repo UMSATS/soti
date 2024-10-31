@@ -6,7 +6,6 @@ from utils.constants import CmdID
 HELP_MESSAGE = """
 send: sends a command to the satellite
 iamnow: sets the default sender ID of sent commands
-query: queries the message history by command name
 help: displays this message
 list: lists the available commands for each subsystem
 exit: exits the program
