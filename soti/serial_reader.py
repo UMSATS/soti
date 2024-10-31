@@ -6,11 +6,11 @@ from utils.constants import MSG_SIZE
 from message import Message
 
 
-def serial_reader(write_msg_queue, out_msg_queue, stop_flag, soti_port):
+def serial_reader(write_msg_queue, out_msg_queue, stop_flag, port):
     """Handles incoming and outgoing serial messages."""
     try:
         # use a write timeout of 1 second to avoid infinite blocking
-        with serial.Serial(soti_port, baudrate=115200, write_timeout=1) as ser:
+        with serial.Serial(port, baudrate=115200, write_timeout=1) as ser:
             while not stop_flag.is_set():
                 # check for incoming messages
                 while ser.in_waiting >= MSG_SIZE:
