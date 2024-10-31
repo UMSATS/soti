@@ -2,76 +2,53 @@
 
 import datetime
 import os
+import string
 import struct
 from queue import Empty
 from enum import Enum
 from utils.constants import NodeID, CmdID, SAVE_DATA_DIR, SESSIONS_DIR, SESSION_FILE_FORMAT
 
-def init_session_log(port: str, file_name = None) -> str:
-    """Initializes the file which logs the session."""
+
+def datetime_to_filename(time: datetime):
+    file_format = time.strftime(SESSION_FILE_FORMAT)
+    return f"{file_format}.log"
+
+
+def save_log(filename: str, start_time: datetime, end_time: datetime, port, msg_log: str):
     if not os.path.exists(SAVE_DATA_DIR):
         os.mkdir(SAVE_DATA_DIR)
     if not os.path.exists(SESSIONS_DIR):
         os.mkdir(SESSIONS_DIR)
 
-    if file_name:
-        # use the file name to determine the time
-        session_start = datetime.datetime.strptime(file_name.strip(".log"), SESSION_FILE_FORMAT)
+    session_length = end_time - start_time
+    hours, remainder = divmod(session_length.seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
 
-    else:
-        # generate a file name based on the current time
-        session_start = datetime.datetime.now()
+    formatted_date = start_time.strftime("%Y-%m-%d")
+    formatted_time = start_time.strftime("%H:%M:%S")
+    formatted_session_length = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
-        file_format = session_start.strftime(SESSION_FILE_FORMAT)
-        file_name = f"{file_format}.log"
-
-    date = session_start.strftime("%Y-%m-%d")
-    time = session_start.strftime("%H:%M:%S")
-
-    header_dict = {
-        "date": date,
-        "time": time,
-        "session-length": None,
+    log_dict = {
+        "date": formatted_date,
+        "time": formatted_time,
+        "session-length": formatted_session_length,
         "port": port,
         "messages": ""
     }
 
-    header = dict_to_yaml(header_dict, 0)
+    log_yaml = dict_to_yaml(log_dict, 0)
+    log_yaml += msg_log
 
-    with open(SESSIONS_DIR / file_name, 'w', encoding="utf_8") as history:
-        history.write(header)
-
-    return file_name
-
-def finalize_session_log(file_name: str):
-    """Writes the session length to the log file."""
-    with open(SESSIONS_DIR / file_name, encoding="utf_8") as history:
-        log = history.read()
-
-    # get the datetime corresponding to the file name
-    session_start = datetime.datetime.strptime(file_name.strip(".log"), SESSION_FILE_FORMAT)
-
-    total_seconds = int((datetime.datetime.now() - session_start).total_seconds())
-    minutes, seconds = divmod(total_seconds, 60)
-    hours, minutes = divmod(minutes, 60)
-
-    # conditionally add hours and format the time
-    log = log.split("\n")
-    hours_str = f"{hours:02d}:" if hours else ""
-    log[2] = f"session-length: '{hours_str}{minutes:02d}:{seconds:02d}'"
-    log = "\n".join(log)
-
-    with open(SESSIONS_DIR / file_name, 'w', encoding="utf_8") as history:
-        history.write(log)
+    with open(SESSIONS_DIR / filename, 'w', encoding="utf_8") as history:
+        history.write(log_yaml)
 
 
 def log_messages(write_msg_queue, stop_flag, port):
     """Writes messages from the queue to the output file."""
-    try:
-        file_name = init_session_log(port)
-        with open(SESSIONS_DIR / file_name, encoding="utf_8") as history:
-            log = history.read()
+    start_time = datetime.datetime.now()
+    msg_log = ""
 
+    try:
         while not stop_flag.is_set():
             try:
                 new_msg = write_msg_queue.get(block=False)
@@ -80,21 +57,8 @@ def log_messages(write_msg_queue, stop_flag, port):
                 if new_msg.source == "port":
                     print(f"Message Parsed: {new_msg_dict}")
 
-                # opening in a+ mode will create the file if it was removed
-                with open(SESSIONS_DIR / file_name, 'a+', encoding="utf_8") as history:
-                    new_log = history.read()
-                    
-                if log and not new_log:
-                    # empty file, regenerate it with the same name
-                    init_session_log(port, file_name)
-                else:
-                    log = new_log
-
                 # append the new message
-                log += dict_to_yaml(new_msg_dict, 1, True) + "\n"
-                
-                with open(SESSIONS_DIR / file_name, 'w', encoding="utf_8") as history:
-                    history.write(log)
+                msg_log += dict_to_yaml(new_msg_dict, 1, True) + "\n"
 
             except Empty: # No item from queue.
                 pass
@@ -102,11 +66,9 @@ def log_messages(write_msg_queue, stop_flag, port):
         pass
 
     finally:
-        # ensure the file exists and contains the log
-        with open(SESSIONS_DIR / file_name, 'w', encoding="utf_8") as history:
-            history.write(log)
-
-        finalize_session_log(file_name)
+        filename = datetime_to_filename(start_time)
+        end_time = datetime.datetime.now()
+        save_log(filename, start_time, end_time, port, msg_log)
 
 
 def dict_to_yaml(d: dict, level: int, listItem: bool = False, recursive: bool = False) -> str:
@@ -115,7 +77,7 @@ def dict_to_yaml(d: dict, level: int, listItem: bool = False, recursive: bool = 
     for index, (key, value) in enumerate(d.items()):
         # determine value format based on its type
         if isinstance(value, str) and len(value) > 0:
-            value_formatted = f"'{value}'"
+            value_formatted = value
         elif isinstance(value, dict):
             if value:
                 # handle nested dictionary recursively
