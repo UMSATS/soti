@@ -30,7 +30,7 @@ class CommandLine(cmd.Cmd):
     # initialize the object
     def __init__(self, out_queue, write_queue, virtual_mode):
         super().__init__()
-        self.intro = "\nAvailable commands:\nsend\niamnow\nquery\nhelp\nlist\nexit\n"
+        self.intro = "\nAvailable commands:\nsend\niamnow\nhelp\nlist\nexit\n"
         self.prompt = ">> "
         self.out_msg_queue = out_queue
         self.write_msg_queue = write_queue
@@ -112,24 +112,6 @@ class CommandLine(cmd.Cmd):
                 print("Invalid sender ID.")
         except ValueError:
             print("Invalid args.")
-
-
-    """ def do_query(self, arg):
-        Queries the message history by command name.
-        print(f"\nSearching message history for {arg} commands...")
-
-        with open(SESSIONS_DIR / self.file_name, encoding="utf_8") as history:
-            log = history.read()
-
-        num_results = 0
-
-        lines = log.splitlines()
-        for line in lines:
-            line = line.strip()
-            if line.startswith("cmd: ") and line[5:] == arg:
-                num_results += 1
-
-        print(f"\nFound {num_results} results.\n") """
 
 
     def do_help(self, arg):
