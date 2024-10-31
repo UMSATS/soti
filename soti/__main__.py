@@ -210,9 +210,9 @@ if __name__ == "__main__":
         write_msg_queue = multiprocessing.Queue() # messages to be written to file
         out_msg_queue = multiprocessing.Queue() # messages to send to SOTI board
 
-        # pipes to send exit signals to the processes
-        serial_stop_sender, serial_stop_receiver = multiprocessing.Pipe()
-        logger_stop_sender, logger_stop_receiver = multiprocessing.Pipe()
+        # thread-safe flags to tell the processes to stop.
+        stop_serial_reader_flag = multiprocessing.Event()
+        stop_session_logger_flag = multiprocessing.Event()
 
         processes = []
 
@@ -223,7 +223,7 @@ if __name__ == "__main__":
                 args=(
                     write_msg_queue,
                     out_msg_queue,
-                    serial_stop_receiver,
+                    stop_serial_reader_flag,
                     selected_port.device
                     ),
                 daemon=True)
@@ -234,7 +234,7 @@ if __name__ == "__main__":
             target=log_messages,
             args=(
                 write_msg_queue,
-                logger_stop_receiver,
+                stop_session_logger_flag,
                 selected_port.device
             ),
             daemon=True)
@@ -251,15 +251,10 @@ if __name__ == "__main__":
 
     finally:
         # tell the processes to stop
-        serial_stop_sender.send("STOP")
-        logger_stop_sender.send("STOP")
-
-        print("\nProcessing remaining messages...")
-        while not (write_msg_queue.empty() and out_msg_queue.empty()):
-            pass
+        stop_serial_reader_flag.set()
+        stop_session_logger_flag.set()
 
         for p in processes:
-            # block until both processes exit
             p.join()
 
         print("\nExiting...")

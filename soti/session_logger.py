@@ -65,19 +65,14 @@ def finalize_session_log(file_name: str):
         history.write(log)
 
 
-def log_messages(write_msg_queue, stop_pipe, port):
+def log_messages(write_msg_queue, stop_flag, port):
     """Writes messages from the queue to the output file."""
-    file_name = init_session_log(port)
     try:
+        file_name = init_session_log(port)
         with open(SESSIONS_DIR / file_name, encoding="utf_8") as history:
             log = history.read()
 
-        active = True
-        while active or not write_msg_queue.empty():
-            if stop_pipe.poll():
-                # the process will now exit once the queue is empty
-                active = False
-
+        while not stop_flag.is_set():
             try:
                 new_msg = write_msg_queue.get(block=False)
 
@@ -101,13 +96,10 @@ def log_messages(write_msg_queue, stop_pipe, port):
                 with open(SESSIONS_DIR / file_name, 'w', encoding="utf_8") as history:
                     history.write(log)
 
-            except Empty:
+            except Empty: # No item from queue.
                 pass
-
     except KeyboardInterrupt:
-        # abort the remaining messages
-        while not write_msg_queue.empty():
-            write_msg_queue.get()
+        pass
 
     finally:
         # ensure the file exists and contains the log
@@ -115,7 +107,6 @@ def log_messages(write_msg_queue, stop_pipe, port):
             history.write(log)
 
         finalize_session_log(file_name)
-        stop_pipe.close()
 
 
 def dict_to_yaml(d: dict, level: int, listItem: bool = False, recursive: bool = False) -> str:
