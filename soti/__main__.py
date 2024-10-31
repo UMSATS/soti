@@ -5,19 +5,17 @@ The main soti front-end script which initializes the terminal and listener threa
 import multiprocessing
 import cmd
 import serial.tools.list_ports
-import sys
-
 import serial.tools.list_ports_common
 
 from utils import help_strings
 from utils.constants import (
-    SESSIONS_DIR,
     NodeID, CmdID, COMM_INFO
 )
 
 from serial_reader import serial_reader
-from session_logger import log_messages, init_session_log, finalize_session_log
+from session_logger import log_messages
 from message import Message
+
 
 class ArgumentException(Exception): pass
 
