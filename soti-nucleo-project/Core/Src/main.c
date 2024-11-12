@@ -21,7 +21,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "tuk/tuk.h"
+#include "tuk/can_wrapper/can_queue.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,9 +49,9 @@ UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-CANQueue_t satelliteToGroundQueue;
-CANQueue_t groundToSatelliteQueue;
-uint8_t canRxData[11];
+CANQueue uart_to_can_queue;
+CANQueue can_to_uart_queue;
+uint8_t can_rx_data[11];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -61,8 +62,10 @@ static void MX_CAN1_Init(void);
 static void MX_UART4_Init(void);
 static void MX_TIM16_Init(void);
 /* USER CODE BEGIN PFP */
-void serializeCANMessage( CANMessage_t* message, uint8_t* serializedData);
-void deserializeCANMessage( CANMessage_t* messageBuffer, const uint8_t* deserializedData);
+void serializeCANMessage(CANMessage* message, uint8_t* serializedData);
+void deserializeCANMessage(CANMessage* message, const uint8_t* deserializedData);
+void on_message_received(CANMessage msg);
+void on_error_occured(CANWrapper_ErrorInfo error);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -104,39 +107,54 @@ int main(void)
   MX_UART4_Init();
   MX_TIM16_Init();
   /* USER CODE BEGIN 2 */
-  CAN_Queue_Init(&satelliteToGroundQueue);
-  CAN_Queue_Init(&groundToSatelliteQueue);
-  HAL_UART_Receive_IT(&huart2, canRxData, sizeof(canRxData));
-  CAN_Init();
-  //Turn off green LED
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+  CANWrapper_InitTypeDef cw_init = {
+    .node_id = NODE_CDH,
+    .notify_of_acks = true,
+
+    .hcan = &hcan1,
+    .htim = &htim16,
+
+    .message_callback = &on_message_received,
+    .error_callback = &on_error_occured
+  };
+
+  uart_to_can_queue = CANQueue_Create();
+  can_to_uart_queue = CANQueue_Create();
+  HAL_UART_Receive_IT(&huart2, can_rx_data, sizeof(can_rx_data));
+  CANWrapper_Init(cw_init);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    if (!CAN_Queue_IsEmpty(&satelliteToGroundQueue))
-    {
-      CANMessage_t receivedData;
-      uint8_t serializedData[11];
+    CANWrapper_Poll_Messages();
+    CANWrapper_Poll_Errors();
 
-      //getting message from the queue.
-      CAN_Queue_Dequeue(&satelliteToGroundQueue, &receivedData);
-      //serializing the CanMessage_t to transfer over UART.
-      serializeCANMessage(&receivedData, serializedData);
-      //transferring data over UART.
-      HAL_UART_Transmit(&huart2, serializedData, sizeof(serializedData), HAL_MAX_DELAY);
+    if (!CANQueue_IsEmpty(&can_to_uart_queue))
+    {
+      // Toggle the LED.
+      HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+
+      CANQueueItem msg;
+      CANQueue_Dequeue(&can_to_uart_queue, &msg);
+
+      // Serialize the CANMessage to transfer over UART.
+      uint8_t serialized_data[11];
+      serializeCANMessage(&msg.msg, serialized_data);
+
+      // Transfer data over UART.
+      HAL_UART_Transmit(&huart2, serialized_data, sizeof(serialized_data), HAL_MAX_DELAY);
     }
 
-    if (!CAN_Queue_IsEmpty(&groundToSatelliteQueue))
+    if (!CANQueue_IsEmpty(&uart_to_can_queue))
     {
-      CANMessage_t receivedData;
+      // Toggle the LED.
+      HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 
-      //getting message from the queue.
-      CAN_Queue_Dequeue(&groundToSatelliteQueue, &receivedData);
-      //transferring data over CAN.
-      CAN_Transmit_Message(receivedData);
+      CANQueueItem msg;
+      CANQueue_Dequeue(&uart_to_can_queue, &msg);
+      CANWrapper_Transmit(msg.msg.recipient, &msg.msg);
     }
     /* USER CODE END WHILE */
 
@@ -366,62 +384,87 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD4_GPIO_Port, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
+void on_message_received(CANMessage msg)
+{
+  CANQueue_Enqueue(&can_to_uart_queue, (CANQueueItem){ .msg = msg });
+}
+
+void on_error_occured(CANWrapper_ErrorInfo error)
+{
+	while (1) {
+		// Forever blink.
+		int counter = 0;
+		while (counter < 65535) {
+			counter++;
+		}
+
+		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+	}
+}
+
+
 /**
-  * @brief  Rx Fifo 0 message pending callback
-  * @param  hcan: pointer to a CAN_HandleTypeDef structure that contains
-  *         the configuration information for the specified CAN.
+  * @brief  EXTI line detection callback.
+  * @param  GPIO_Pin Specifies the port pin connected to corresponding EXTI line.
   * @retval None
   */
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan1)
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-  HAL_StatusTypeDef operation_status;
-  operation_status = CAN_Message_Received();
-  if (operation_status != HAL_OK)
+  // Check if the push button has been pressed.
+  if (GPIO_Pin == GPIO_PIN_13)
   {
-    //Turn on green LED
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+    // Create a fake message and send it over UART.
+    CANMessage msg = {
+      .cmd = CMD_CDH_PROCESS_TELEMETRY_REPORT
+    };
+    CANQueue_Enqueue(&can_to_uart_queue, (CANQueueItem){ .msg = msg });
   }
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-  CANMessage_t message;
+  // Deserialize the received message.
+  CANMessage msg;
+  deserializeCANMessage(&msg, can_rx_data);
 
-  deserializeCANMessage(&message, canRxData);
+  CANQueue_Enqueue(&uart_to_can_queue, (CANQueueItem){ .msg = msg });
 
-  CAN_Queue_Enqueue(&groundToSatelliteQueue, &message);
-
-  HAL_UART_Receive_IT(&huart2, canRxData, sizeof(canRxData));
+  // Set up the next interrupt.
+  HAL_UART_Receive_IT(&huart2, can_rx_data, sizeof(can_rx_data));
 }
 
-void serializeCANMessage(CANMessage_t* message, uint8_t* serializedData)
+void serializeCANMessage(CANMessage* message, uint8_t* serializedData)
 {
   serializedData[0] = message->priority;
-  serializedData[1] = message->SenderID;
-  serializedData[2] = message->DestinationID;
-  serializedData[3] = message->command;
+  serializedData[1] = message->sender;
+  serializedData[2] = message->recipient;
+  serializedData[3] = message->cmd;
 
-  for (int i = 0; i < 7; i++)
+  for (int i = 0; i < CAN_MAX_BODY_SIZE; i++)
   {
-    serializedData[4 + i] = message->data[i];
+    serializedData[4 + i] = message->body[i];
   }
 }
 
-void deserializeCANMessage(CANMessage_t* messageBuffer, const uint8_t* deserializedData)
+void deserializeCANMessage(CANMessage* message, const uint8_t* deserializedData)
 {
-  messageBuffer->priority = deserializedData[0];
-  messageBuffer->SenderID = deserializedData[1];
-  messageBuffer->DestinationID = deserializedData[2];
-  messageBuffer->command = deserializedData[3];
+	message->priority = deserializedData[0];
+	message->sender = deserializedData[1];
+	message->recipient = deserializedData[2];
+	message->cmd = deserializedData[3];
 
-  for (int i = 0; i < 7; i++)
+  for (int i = 0; i < CAN_MAX_BODY_SIZE; i++)
   {
-    messageBuffer->data[i] = deserializedData[4 + i];
+  	message->body[i] = deserializedData[4 + i];
   }
 }
 /* USER CODE END 4 */
