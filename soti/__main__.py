@@ -41,14 +41,11 @@ class CommandLine(cmd.Cmd):
             cmd_str, data, options, parse_error = parse_send(arg)
             
             # resolve command argument to corresponding ID
-            try:
-                cmd_id = CmdID(int(cmd_str, 16))
-            except ValueError:
-                if cmd_str in CmdID.__members__:
-                    cmd_id = CmdID[cmd_str]
-                else:
-                    raise ArgumentException("Invalid command code")
-            
+            cmd_id = parse_int(cmd_str)
+            if cmd_id is None or cmd_id >= len(CmdID):
+                raise ArgumentException("Invalid command code")
+            cmd_id = CmdID(cmd_id)
+
             # get the default values for the command
             priority = COMM_INFO[cmd_id]["priority"]
             sender_id = self.sender_id
@@ -57,13 +54,13 @@ class CommandLine(cmd.Cmd):
             # override defaults with optional arguments
             for key in options:
                 if key == "priority":
-                    priority = int(options["priority"])
+                    priority = parse_int(options["priority"])
                 
                 try:
                     if key == "from":
-                        sender_id = NodeID[options["from"]]
+                        sender_id = NodeID(parse_int(options["from"]))
                     if key == "to":
-                        dest_id = NodeID[options["to"]]
+                        dest_id = NodeID(parse_int(options["to"]))
                 except KeyError:
                     raise ArgumentException("Invalid node ID")
             
@@ -100,7 +97,7 @@ class CommandLine(cmd.Cmd):
     def do_iamnow(self, arg):
         """Changes the default sender ID."""
         try:
-            node_id = NodeID(int(arg, 0))
+            node_id = NodeID(parse_int(arg))
             if node_id in NodeID:
                 self.sender_id = node_id
                 print(f"Updated sender ID to {self.sender_id.get_display_name()}.")
@@ -159,6 +156,26 @@ def parse_send(args: str) -> tuple[str, str, dict, str]:
     
     return cmd_id, data, options, error
 
+def parse_int(i, base = 10) -> int:
+    """Casts numbers and enum members to int."""
+    try:
+        if isinstance(i, int):
+            return i
+        elif isinstance(i, str):
+            if i.isnumeric():
+                return int(i)
+            if i[:2] == "0x":
+                return int(i, 16)
+            if i[:2] == "0b":
+                return int(i, 2)
+            if i in NodeID.__members__:
+                return NodeID[i].value
+            if i in CmdID.__members__:
+                return CmdID[i].value
+        else:
+            raise ArgumentException # no valid cast
+    except (ValueError, ArgumentException) as e:
+        return e
 
 # ----------------------------------------------------------
 # MAIN APPLICATION CODE
