@@ -89,7 +89,7 @@ class CommandLine(cmd.Cmd):
             self.write_msg_queue.put(msg)
             self.out_msg_queue.put(msg)
 
-        except ArgumentException as e:
+        except (ValueError, ArgumentException) as e:
             print(e)
             return
 
@@ -173,9 +173,11 @@ def parse_int(i, base = 10) -> int:
             if i in CmdID.__members__:
                 return CmdID[i].value
         else:
-            raise ArgumentException # no valid cast
-    except (ValueError, ArgumentException) as e:
-        return e
+            # no valid cast
+            raise ValueError()
+    except (ValueError) as e:
+        # raises an exception for the caller
+        raise ValueError(e) from e
 
 # ----------------------------------------------------------
 # MAIN APPLICATION CODE
