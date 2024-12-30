@@ -148,15 +148,21 @@ def parse_send(args: str) -> tuple[str, str, dict, str]:
                 options[key] = value
             # else treat as data argument
             else:
-                value = format(int(part, 16), 'x')
-                # restore leading zeroes
-                data += value.zfill(len(part) - (2 if '0x' in part else 0))
+                # value is a hex string (ex. "7b")
+                value = format(parse_int(part), 'x')
+                # add zeros to match nearest int size (8, 16, 32 bits)
+                digits = len(value)
+                target_digits = 2
+                while target_digits < digits: target_digits *= 2
+                value = value.rjust(target_digits, "0")
+                # append value to data
+                data += value
         except ValueError:
             error = f"Unknown argument '{part}'"
     
     return cmd_id, data, options, error
 
-def parse_int(i, base = 10) -> int:
+def parse_int(i) -> int:
     """Casts numbers and enum members to int."""
     try:
         if isinstance(i, int):
