@@ -9,7 +9,7 @@ import serial.tools.list_ports_common
 
 from utils import help_strings
 from utils.constants import (
-    NodeID, CmdID, COMM_INFO
+    NodeID, CmdID, COMM_INFO, DATA_SIZE
 )
 
 from serial_reader import serial_reader
@@ -38,13 +38,13 @@ class CommandLine(cmd.Cmd):
     def do_send(self, arg):
         """Sends a command."""
         try:
-            cmd_str, data, options, parse_error = parse_send(arg)
+            cmd_str, data, options = parse_send(arg)
             
-            # resolve command argument to corresponding ID
-            cmd_id = parse_int(cmd_str)
-            if cmd_id is None or cmd_id >= len(CmdID):
-                raise ArgumentException("Invalid command code")
-            cmd_id = CmdID(cmd_id)
+            # get corresponding CmdID
+            try:
+                cmd_id = CmdID(parse_int(cmd_str))
+            except ValueError:
+                raise ArgumentException("Invalid command ID")
 
             # get the default values for the command
             priority = COMM_INFO[cmd_id]["priority"]
@@ -61,29 +61,20 @@ class CommandLine(cmd.Cmd):
                         sender_id = NodeID(parse_int(options["from"]))
                     if key == "to":
                         dest_id = NodeID(parse_int(options["to"]))
-                except KeyError:
+                except (ValueError, KeyError):
                     raise ArgumentException("Invalid node ID")
             
             # raise exceptions for invalid arguments
-            if parse_error:
-                raise ArgumentException(parse_error)
-            
             if not (0 <= priority <= 32):
                 raise ArgumentException("Invalid priority")
             
             if dest_id is None:
                 raise ArgumentException(f"{cmd_id.name} requires a recipient")
 
-            # truncate excess data arguments
-            data = data[:14]
-            
-            # pad data with zeros to create a full message
-            data = data.ljust(14, "0")
-
             print(f"\nCommand: {cmd_id.name}\nDestination: {dest_id.get_display_name()}")
 
             # create a message using the arguments
-            msg = Message(priority, sender_id, dest_id, cmd_id, bytes.fromhex(data), source="user")
+            msg = Message(priority, sender_id, dest_id, cmd_id, data, source="user")
 
             # send the message to be written to the serial device and logged
             self.write_msg_queue.put(msg)
@@ -131,14 +122,14 @@ class CommandLine(cmd.Cmd):
 # FUNCTIONS
 # ----------------------------------------------------------
 
-def parse_send(args: str) -> tuple[str, str, dict, str]:
+def parse_send(args: str) -> tuple[bytes, str, dict, str]:
     """Parses arguments for `do_send`."""
     parts = args.split()
 
     cmd_id = parts[0]
-    data = ""
+    data = bytearray(DATA_SIZE)
+    data_index = 0
     options = {}
-    error = ""
 
     for index, part in enumerate(parts[1:]):
         try:
@@ -148,7 +139,7 @@ def parse_send(args: str) -> tuple[str, str, dict, str]:
                 options[key] = value
 
             # else treat as data argument
-            else:
+            elif data_index < DATA_SIZE:
                 # value is a hex string (ex. "7b")
                 value = format(parse_int(part), 'x')
 
@@ -160,20 +151,29 @@ def parse_send(args: str) -> tuple[str, str, dict, str]:
                     digits = (len(part) - 2)
                 else:
                     digits = len(value)
+
                 target_digits = 2
                 while target_digits < digits: target_digits *= 2
                 value = value.rjust(target_digits, "0")
 
-                # append value to data
-                data += value
+                # insert value into data bytearray
+                end_index = data_index + target_digits // 2
+                data[data_index : end_index] = bytes.fromhex(value)
+                data_index = end_index
 
         except ValueError:
-            error = f"Unknown argument '{part}'"
-    
-    return cmd_id, data, options, error
+            raise ArgumentException(f"Unknown argument '{part}'")
+
+    # truncate extra bytes
+    data = data[:DATA_SIZE]
+
+    return cmd_id, bytes(data), options
 
 def parse_int(i) -> int:
-    """Casts numbers and enum members to int."""
+    """
+    Casts numbers and enum members to int.
+    Raises ValueError for invalid values.
+    """
     try:
         if isinstance(i, int):
             return i
@@ -188,9 +188,8 @@ def parse_int(i) -> int:
                 return NodeID[i].value
             if i in CmdID.__members__:
                 return CmdID[i].value
-        else:
-            # no valid cast
-            raise ValueError()
+        # no valid cast
+        raise ValueError()
     except (ValueError) as e:
         # raises an exception for the caller
         raise ValueError(e) from e
