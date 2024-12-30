@@ -156,6 +156,8 @@ def parse_send(args: str) -> tuple[str, str, dict, str]:
                 if part[:2] == "0b":
                     # subtract prefix and round up
                     digits = (len(part) - 2 + 3) // 4
+                elif part[:2] == "0x":
+                    digits = (len(part) - 2)
                 else:
                     digits = len(value)
                 target_digits = 2
