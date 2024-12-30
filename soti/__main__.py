@@ -146,17 +146,25 @@ def parse_send(args: str) -> tuple[str, str, dict, str]:
             if '=' in part:  
                 key, value = part.split('=')
                 options[key] = value
+
             # else treat as data argument
             else:
                 # value is a hex string (ex. "7b")
                 value = format(parse_int(part), 'x')
+
                 # add zeros to match nearest int size (8, 16, 32 bits)
-                digits = len(value)
+                if part[:2] == "0b":
+                    # subtract prefix and round up
+                    digits = (len(part) - 2 + 3) // 4
+                else:
+                    digits = len(value)
                 target_digits = 2
                 while target_digits < digits: target_digits *= 2
                 value = value.rjust(target_digits, "0")
+
                 # append value to data
                 data += value
+
         except ValueError:
             error = f"Unknown argument '{part}'"
     
