@@ -207,7 +207,7 @@ def parse_send(args: str) -> tuple[bytes, str, dict, str]:
                     value *= -1
 
                 # create a bytes object
-                value = int(value).to_bytes(bytes_length, signed=signed)
+                value = int(value).to_bytes(bytes_length, byteorder="little", signed=signed)
                 # insert the value into data
                 end_index = data_index + bytes_length
                 data[data_index : end_index] = value
