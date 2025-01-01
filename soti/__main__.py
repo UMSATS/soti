@@ -156,7 +156,7 @@ def parse_send(args: str) -> tuple[bytes, str, dict, str]:
                     signed = type[0] == "i" if explicit_sign else False
 
                     # slice from 1 if sign was provided
-                    target_digits = int(type[int(explicit_sign):]) // 4
+                    target_size = int(type[int(explicit_sign):]) // 8
 
                     # remove the cast from the argument
                     arg = arg[type_end + 1 :]
@@ -170,23 +170,22 @@ def parse_send(args: str) -> tuple[bytes, str, dict, str]:
                     # defaults to unsigned unless negative
                     signed = negative
 
+                    # determine minimum byte size to store the number
                     if arg[:2] == "0b":
-                        # subtract prefix and round up
-                        digits = (len(arg) - 2 + 3) // 4
+                        size = (len(arg) - 2 + 7) // 8
                     elif arg[:2] == "0x":
-                        digits = (len(arg) - 2)
-                    else:
-                        digits = len(format(parse_int(arg), 'x'))
+                        size = (len(arg) - 2 + 1) // 2
+                    else: # decimal
+                        size = (len(format(parse_int(arg), 'x')) + 1) // 2
 
-                    # determine nearest integer width (8, 16, 32 bits)
-                    target_digits = 2
-                    while target_digits < digits: target_digits *= 2
+                    # determine nearest integer width (1, 2, 4 bytes)
+                    target_size = 1
+                    while target_size < size: target_size *= 2
 
                 # value is the absolute value of the number
                 value = parse_int(arg)
-                bytes_length = target_digits // 2
 
-                max_unsigned = 2 ** (bytes_length * 8) - 1
+                max_unsigned = 2 ** (target_size * 8) - 1
                 max_signed = max_unsigned // 2
 
                 # handle overflows based on signedness
@@ -207,9 +206,9 @@ def parse_send(args: str) -> tuple[bytes, str, dict, str]:
                     value *= -1
 
                 # create a bytes object
-                value = int(value).to_bytes(bytes_length, byteorder="little", signed=signed)
+                value = int(value).to_bytes(target_size, byteorder="little", signed=signed)
                 # insert the value into data
-                end_index = data_index + bytes_length
+                end_index = data_index + target_size
                 data[data_index : end_index] = value
                 data_index = end_index
 
