@@ -132,37 +132,93 @@ def parse_send(args: str) -> tuple[bytes, str, dict, str]:
     options = {}
 
     for index, part in enumerate(parts[1:]):
+        arg = part
         try:
             # check if key-value pair
-            if '=' in part:  
-                key, value = part.split('=')
+            if '=' in arg:  
+                key, value = arg.split('=')
                 options[key] = value
 
-            # else treat as data argument
+            # treat as data argument
             elif data_index < DATA_SIZE:
-                # value is a hex string (ex. "7b")
-                value = format(parse_int(part), 'x')
+                # check if integer type was provided
+                explicit_type = arg[0] == "("
 
-                # add zeros to match nearest int size (8, 16, 32 bits)
-                if part[:2] == "0b":
-                    # subtract prefix and round up
-                    digits = (len(part) - 2 + 3) // 4
-                elif part[:2] == "0x":
-                    digits = (len(part) - 2)
-                else:
-                    digits = len(value)
+                if explicit_type:
+                    type_end = arg.find(")")
+                    if type_end <= 0: 
+                        raise ValueError()
 
-                target_digits = 2
-                while target_digits < digits: target_digits *= 2
-                value = value.rjust(target_digits, "0")
+                    type = arg[1 : type_end]
 
-                # insert value into data bytearray
-                end_index = data_index + target_digits // 2
-                data[data_index : end_index] = bytes.fromhex(value)
+                    # only signed if first character is "i"
+                    explicit_sign = not type[0].isnumeric()
+                    signed = type[0] == "i" if explicit_sign else False
+
+                    # slice from 1 if sign was provided
+                    target_digits = int(type[int(explicit_sign):]) // 4
+
+                    # remove the cast from the argument
+                    arg = arg[type_end + 1 :]
+
+                negative = arg[0] == "-"
+                if negative: 
+                    # remove negative sign
+                    arg = arg[1:]
+
+                if not explicit_type:
+                    # defaults to unsigned unless negative
+                    signed = negative
+
+                    if arg[:2] == "0b":
+                        # subtract prefix and round up
+                        digits = (len(arg) - 2 + 3) // 4
+                    elif arg[:2] == "0x":
+                        digits = (len(arg) - 2)
+                    else:
+                        digits = len(format(parse_int(arg), 'x'))
+
+                    # determine nearest integer width (8, 16, 32 bits)
+                    target_digits = 2
+                    while target_digits < digits: target_digits *= 2
+
+                # value is the absolute value of the number
+                value = parse_int(arg)
+                bytes_length = target_digits // 2
+
+                max_unsigned = 2 ** (bytes_length * 8) - 1
+                max_signed = max_unsigned // 2
+
+                # handle overflows based on signedness
+                if value > max_unsigned:
+                    raise ArgumentException(f"Overflow from {part}")
+                elif not signed and negative:
+                    raise ArgumentException(f"{part} cannot be unsigned and negative")
+                
+                elif signed and value > max_signed:
+                    if not negative:
+                        # overflow to negative two's complement
+                        value = value - max_unsigned - 1
+                    elif value > max_signed + 1:
+                        # negative underflow
+                        raise ArgumentException(f"Underflow from {part}")
+
+                if negative:
+                    value *= -1
+
+                # create a bytes object
+                value = int(value).to_bytes(bytes_length, signed=signed)
+                # insert the value into data
+                end_index = data_index + bytes_length
+                data[data_index : end_index] = value
                 data_index = end_index
 
         except ValueError:
-            raise ArgumentException(f"Unknown argument '{part}'")
+            raise ArgumentException(f"Invalid argument '{part}'")
+        except IndexError:
+            raise ArgumentException(f"Invalid syntax: {part}")
+        except ArgumentException as e:
+            raise ArgumentException(e) from e
 
     # truncate extra bytes
     data = data[:DATA_SIZE]
