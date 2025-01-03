@@ -37,7 +37,7 @@ class CommandLine(cmd.Cmd):
     def do_send(self, arg):
         """Sends a command."""
         try:
-            cmd_str, data, options = (arg)
+            cmd_str, data, options = parser.parse_send(arg)
 
             # get corresponding CmdID
             try:

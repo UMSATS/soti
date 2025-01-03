@@ -10,7 +10,7 @@ class ArgumentException(Exception):
     pass
 
 
-def parse_send(args: str) -> tuple[bytes, str, dict, str]:
+def parse_send(args: str) -> tuple[bytes, str, dict]:
     """Parses arguments for `do_send`."""
     parts = args.split()
 
