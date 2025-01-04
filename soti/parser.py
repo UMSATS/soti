@@ -37,8 +37,7 @@ def parse_int(s: str) -> int:
     elif s in CmdID.__members__:
         i = CmdID[s].value
     else:
-        # no valid parsing
-        raise ValueError()
+        raise ValueError(f"'{s}' cannot be parsed as an int")
 
     if is_negative:
         i = -i
@@ -83,7 +82,7 @@ def parse_send(args: str, default_sender: NodeID) -> Message:
     try:
         cmd_id = CmdID(parse_int(parts[0]))
     except ValueError:
-        raise ArgumentException(f"Invalid command ID {parts[0]}")
+        raise ArgumentException(f"Invalid command ID '{parts[0]}'")
 
     # Assign default values for the command options.
     priority: int = COMM_INFO[cmd_id]["priority"]
@@ -143,6 +142,8 @@ def parse_send(args: str, default_sender: NodeID) -> Message:
                     data_size = 2
                 elif data_type in ["u32", "i32"]:
                     data_size = 4
+                else:
+                    raise ArgumentException(f"Invalid type '{data_type}'")
 
                 # create a bytes object
                 data.extend(value.to_bytes(data_size, byteorder="little", signed=is_signed))
