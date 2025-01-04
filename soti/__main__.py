@@ -8,9 +8,7 @@ import serial.tools.list_ports
 import serial.tools.list_ports_common
 
 from utils import help_strings
-from utils.constants import (
-    NodeID, CmdID, COMM_INFO
-)
+from utils.constants import CmdID, NodeID
 
 from serial_reader import serial_reader
 from session_logger import log_messages
@@ -37,43 +35,9 @@ class CommandLine(cmd.Cmd):
     def do_send(self, arg):
         """Sends a command."""
         try:
-            cmd_str, data, options = parser.parse_send(arg)
+            msg = parser.parse_send(arg, self.sender_id)
 
-            # get corresponding CmdID
-            try:
-                cmd_id = CmdID(parser.parse_int(cmd_str))
-            except ValueError:
-                raise parser.ArgumentException("Invalid command ID")
-
-            # get the default values for the command
-            priority = COMM_INFO[cmd_id]["priority"]
-            sender_id = self.sender_id
-            dest_id = COMM_INFO[cmd_id]["dest"]
-
-            # override defaults with optional arguments
-            for key in options:
-                if key == "priority":
-                    priority = parser.parse_int(options["priority"])
-
-                try:
-                    if key == "from":
-                        sender_id = NodeID(parser.parse_int(options["from"]))
-                    if key == "to":
-                        dest_id = NodeID(parser.parse_int(options["to"]))
-                except (ValueError, KeyError):
-                    raise parser.ArgumentException("Invalid node ID")
-
-            # raise exceptions for invalid arguments
-            if not (0 <= priority <= 32):
-                raise parser.ArgumentException("Invalid priority")
-
-            if dest_id is None:
-                raise parser.ArgumentException(f"{cmd_id.name} requires a recipient")
-
-            print(f"\nCommand: {cmd_id.name}\nDestination: {dest_id.get_display_name()}")
-
-            # create a message using the arguments
-            msg = Message(priority, sender_id, dest_id, cmd_id, data, source="user")
+            print(f"\nCommand: {msg.cmd_id.name}\nDestination: {msg.recipient.get_display_name()}")
 
             # send the message to be written to the serial device and logged
             self.write_msg_queue.put(msg)

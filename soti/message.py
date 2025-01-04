@@ -1,6 +1,6 @@
 from datetime import datetime
 from dataclasses import dataclass, field
-from utils.constants import CmdID, NodeID
+from utils.constants import DATA_SIZE, CmdID, NodeID
 from session_logger import parse_msg_body
 
 @dataclass
@@ -30,14 +30,22 @@ class Message:
 
     def serialize(self) -> bytes:
         """Return the serialized bytes of the message."""
+        # Ensure the data field is the correct length.
+        data = bytearray(self.body)
+        if len(data) > DATA_SIZE:
+            return data[:DATA_SIZE]  # Truncate to the specified length
+        elif len(data) < DATA_SIZE:
+            return data + bytearray(DATA_SIZE - len(data))  # Extend with zeroes
+
         return bytes(bytearray([
             self.priority,
             self.sender.value,
             self.recipient.value,
             self.cmd_id.value])
-            + self.body
+            + data
         )
-        
+
+
     def as_dict(self) -> dict:
         """Return the message parameters as a dictionary."""
         return {
