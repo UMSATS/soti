@@ -154,10 +154,4 @@ def parse_send(args: str, default_sender: NodeID) -> Message:
     if recipient_id is None:
         raise ArgumentException(f"You must specify a recipient with the 'to' option for {cmd_id.name}")
 
-    # Ensure the data field is the correct length.
-    if len(data) > DATA_SIZE:
-        data = data[:DATA_SIZE]  # Truncate to the right length.
-    elif len(data) < DATA_SIZE:
-        data = data + bytearray(DATA_SIZE - len(data))  # Extend with zeroes.
-
     return Message(priority, sender_id, recipient_id, cmd_id, bytes(data), source="user")
