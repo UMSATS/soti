@@ -80,7 +80,10 @@ def parse_send(args: str, default_sender: NodeID) -> Message:
     """
     parts = args.split()
 
-    cmd_id = CmdID(parse_int(parts[0]))
+    try:
+        cmd_id = CmdID(parse_int(parts[0]))
+    except ValueError:
+        raise ArgumentException(f"Invalid command ID {parts[0]}")
 
     # Assign default values for the command options.
     priority: int = COMM_INFO[cmd_id]["priority"]
