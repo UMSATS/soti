@@ -145,8 +145,14 @@ def parse_send(args: str, default_sender: NodeID) -> Message:
                 else:
                     raise ArgumentException(f"Invalid type '{data_type}'")
 
-                # create a bytes object
-                data.extend(value.to_bytes(data_size, byteorder="little", signed=is_signed))
+                # Convert value to a bytes object.
+                try:
+                    raw_bytes = value.to_bytes(data_size, byteorder="little", signed=is_signed)
+                except OverflowError as exc:
+                    raise ArgumentException(f"Integer overflow. '{re_match.group(2)}' cannot be represented as {data_type}") from exc
+
+                # Add the bytes of data.
+                data.extend(raw_bytes)
 
         except ValueError as exc:
             raise ArgumentException(f"Invalid argument '{arg}': {exc}") from exc
