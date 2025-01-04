@@ -17,6 +17,14 @@ class Message:
         lambda: datetime.now().strftime("%T")
     )
 
+    def __post_init__(self):
+        # Ensure the data field is the correct length.
+        data = bytearray(self.body)
+        if len(data) > DATA_SIZE:
+            self.body = bytes(data[:DATA_SIZE])  # Truncate to the specified length
+        elif len(data) < DATA_SIZE:
+            self.body = bytes(data + bytearray(DATA_SIZE - len(data)))  # Extend with zeroes
+
     @classmethod
     def deserialize(cls, msg_bytes: bytes) -> "Message":
         """Create a message from serialized bytes."""
@@ -30,19 +38,12 @@ class Message:
 
     def serialize(self) -> bytes:
         """Return the serialized bytes of the message."""
-        # Ensure the data field is the correct length.
-        data = bytearray(self.body)
-        if len(data) > DATA_SIZE:
-            return data[:DATA_SIZE]  # Truncate to the specified length
-        elif len(data) < DATA_SIZE:
-            return data + bytearray(DATA_SIZE - len(data))  # Extend with zeroes
-
         return bytes(bytearray([
             self.priority,
             self.sender.value,
             self.recipient.value,
             self.cmd_id.value])
-            + data
+            + self.body
         )
 
 
