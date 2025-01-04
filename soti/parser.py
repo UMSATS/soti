@@ -139,7 +139,7 @@ def parse_send(args: str, default_sender: NodeID) -> Message:
                 elif data_type in ["u16", "i16"]:
                     data_size = 2
                 elif data_type in ["u32", "i32"]:
-                    data_size = 3
+                    data_size = 4
 
                 # create a bytes object
                 data.extend(value.to_bytes(data_size, byteorder="little", signed=is_signed))
