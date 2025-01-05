@@ -1,6 +1,6 @@
 from datetime import datetime
 from dataclasses import dataclass, field
-from utils.constants import CmdID, NodeID
+from utils.constants import DATA_SIZE, CmdID, NodeID
 from session_logger import parse_msg_body
 
 @dataclass
@@ -16,6 +16,14 @@ class Message:
     time: datetime = field(default_factory=
         lambda: datetime.now().strftime("%T")
     )
+
+    def __post_init__(self):
+        # Ensure the data field is the correct length.
+        data = bytearray(self.body)
+        if len(data) > DATA_SIZE:
+            self.body = bytes(data[:DATA_SIZE])  # Truncate to the specified length
+        elif len(data) < DATA_SIZE:
+            self.body = bytes(data + bytearray(DATA_SIZE - len(data)))  # Extend with zeroes
 
     @classmethod
     def deserialize(cls, msg_bytes: bytes) -> "Message":
@@ -37,7 +45,8 @@ class Message:
             self.cmd_id.value])
             + self.body
         )
-        
+
+
     def as_dict(self) -> dict:
         """Return the message parameters as a dictionary."""
         return {
