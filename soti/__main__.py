@@ -11,7 +11,7 @@ from utils import help_strings
 from utils.constants import CmdID, NodeID
 
 from serial_reader import serial_reader
-from session_logger import log_messages
+from session_logger import log_messages, dict_to_yaml
 from message import Message
 import parser
 
@@ -37,11 +37,16 @@ class CommandLine(cmd.Cmd):
         try:
             msg = parser.parse_send(arg, self.sender_id)
 
-            print(f"\nCommand: {msg.cmd_id.name}\nDestination: {msg.recipient.get_display_name()}")
+            msg_yaml = dict_to_yaml(msg.as_dict(), 1, True)
+            print(f"Preparing to send message:\n{msg_yaml}")
 
-            # send the message to be written to the serial device and logged
-            self.write_msg_queue.put(msg)
-            self.out_msg_queue.put(msg)
+            match input("Send this message? (Y/N) ").lower():
+                case "y":
+                    # send the message to be written to the serial device and logged
+                    self.write_msg_queue.put(msg)
+                    self.out_msg_queue.put(msg)
+                case _:
+                    print("Cancelled message send.")
 
         except (ValueError, parser.ArgumentException) as e:
             print(e)
