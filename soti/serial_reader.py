@@ -24,10 +24,14 @@ def serial_reader(write_msg_queue, out_msg_queue, stop_flag, port):
 
                 # check for outgoing messages
                 try:
-                    # write the appropriate command + arguments to the serial device
-                    out_msg = out_msg_queue.get(block=False).serialize()
-                    print(f"Sending bytes to the satellite: 0x{out_msg.hex().upper()}")
-                    ser.write(out_msg)
+                    out_msg = out_msg_queue.get(block=False)
+
+                    out_msg_cmd = out_msg.as_dict()["cmd"].name
+                    out_msg_recipient = out_msg.as_dict()["recipient-id"].get_display_name()
+                    print(f"Sending '{out_msg_cmd}' to {out_msg_recipient}.")
+
+                    # write the message to the serial device
+                    ser.write(out_msg.serialize())
                 except Empty:
                     pass
                 except serial.SerialTimeoutException:
