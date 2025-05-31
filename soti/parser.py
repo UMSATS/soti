@@ -3,8 +3,9 @@ The SOTI parser.
 """
 
 import re
-from message import Message
-from utils.constants import (
+
+from soti.message import Message
+from soti.utils.constants import (
     NodeID, CmdID, COMM_INFO, DATA_SIZE
 )
 

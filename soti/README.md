@@ -35,26 +35,17 @@ python3 soti
 ```
 
 ## Linux & MacOS instructions
-Accessing the serial port is sometimes restricted to the super user.
+Accessing the serial device is sometimes restricted to the super user.
 
 Therefore, to run the program, run `sudo python3 soti`.
 
-## Specify port
-The CLI will prompt you to enter a serial port to read to and write from.
-
-**Please write this correctly, or the CLI will throw an exception!**
+## Specify device
 
 The SOTI terminal will present a list of your available ports:
 
-`Windows ex. "COM6 - STMicroelectronics STLink Virtual COM Port (COM6)"`
-`Linux ex. "/dev/ttyACM0 - STM32 STLink - ST-Link VCP Ctrl"`
-
-From this list, find the port corresponding to your device.
+From this list, select the option corresponding to your device.
 
 Enter only the device name.
-
-`Windows ex. Input "COM6" (without the quotation marks)`
-`Linux ex. Input "/dev/ttyACM0" (without the quotation marks)`
 
 ## Send commands
 To send a command, please use its command code, prefixed with "0x" and followed by any arguments in hexadecimal notation.

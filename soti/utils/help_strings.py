@@ -1,6 +1,6 @@
 """Includes strings used in help messages."""
 
-from utils.constants import CmdID
+from soti.utils.constants import CmdID
 
 
 HELP_MESSAGE = """
