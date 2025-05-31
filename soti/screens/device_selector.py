@@ -5,6 +5,7 @@ import serial.tools.list_ports
 
 import config
 from device import COMDevice, Device
+from utils.constants import RES_DIR
 from widgets import IconButton
 from soti_signal import Signal
 
@@ -32,8 +33,11 @@ class DeviceSelector():
 
     def _create_widget(self, menu_items: urwid.SimpleFocusListWalker) -> urwid.Widget:
         """Creates the top-level widget of the screen. Called once in __init__."""
+        with open(RES_DIR / "banner.txt", 'r', encoding='utf-8') as file:
+            banner_art = file.read()
+
         # Create the banner and title.
-        banner = urwid.Text(('soti banner', "[ Banner Art ]"), align='center')
+        banner = urwid.Text(('soti banner', banner_art), align='center')
         title = urwid.Text(('soti title', "Satellite • Operations • Testing • Interface\n\n"), align='center')
 
         # Create menu of serial devices
@@ -88,7 +92,7 @@ class DeviceSelector():
         # Add the special virtual device.
         virtual_device = Device(
             "Virtual Mode",
-            "For off-board testing.",
+            "For off-board testing",
             icon=config.ICONS['PORT_VIRTUAL']
         )
         devices.append(virtual_device)
