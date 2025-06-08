@@ -1,3 +1,7 @@
+"""
+Collection of re-useable widgets created for the SOTI TUI.
+"""
+
 import urwid
 
 from soti_signal import Signal

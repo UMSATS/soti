@@ -1,5 +1,7 @@
 """Application-level Configuration"""
 
+APP_VERSION = "2.0"
+
 # Define the colour palette for the UI here.
 # See <https://urwid.org/manual/displayattributes.html>
 PALETTE = [
@@ -14,5 +16,5 @@ PALETTE = [
 # Define icons here.
 ICONS = {
     'PORT_DEFAULT': "🔌",
-    'PORT_VIRTUAL': "🌐",
+    'PORT_NONE': "❌",
 }

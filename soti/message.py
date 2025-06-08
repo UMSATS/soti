@@ -4,6 +4,9 @@ from dataclasses import dataclass, field
 from utils.constants import DATA_SIZE, CmdID, NodeID
 from session_logger import parse_msg_body
 
+# The length of a serialized message in bytes.
+MSG_SIZE = 11
+
 @dataclass
 class Message:
     # serial parameters

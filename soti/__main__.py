@@ -1,32 +1,29 @@
 """
-Main script and entry point of the application. This is where global state is
-managed.
+Entry point of the application. This is where all global state is managed.
 """
 
 import urwid
 
 import config
-from screens.main_screen import MainScreen
-from screens.device_selector import DeviceSelector
-from device import Device
+import screens
 
 
 class App():
     """Represents the entire SOTI application."""
 
     def __init__(self):
-        # Define the main loop which will get executed in the run() method.
+        # This loop will take control of the main thread in run().
         self.loop = urwid.MainLoop(
             urwid.SolidFill(" "), # placeholder - will get swapped
             config.PALETTE,
             unhandled_input=self.unhandled_input
         )
 
-        self.current_screen = None
+        # The current active screen.
+        self.current_screen: screens.Screen | None = None
 
-        # Switch to the starting screen of the application.
-        initial_screen = DeviceSelector()
-        initial_screen.finished.connect(self._on_device_selector_finished)
+        # Switch to the initial screen of the application.
+        initial_screen = screens.DeviceSelector()
         self.change_screen(initial_screen)
 
     def run(self):
@@ -35,6 +32,17 @@ class App():
         finally:
             self.current_screen.on_exit(self.loop)
 
+    def change_screen(self, screen: screens.Screen):
+        """Switches to another screen and swaps the UI."""
+        if self.current_screen is not None:
+            self.current_screen.on_exit(self.loop)
+
+        self.current_screen = screen
+
+        screen.change_screen.connect(self.change_screen)
+        self.loop.widget = screen.get_root_widget()
+        screen.on_enter(self.loop)
+
     def unhandled_input(self, key):
         """
         Handles user input not captured by widgets in the tree. This is where
@@ -42,19 +50,6 @@ class App():
         """
         if key == 'q':
             raise urwid.ExitMainLoop()
-
-    def change_screen(self, screen):
-        """Switches to a different screen and swaps the UI."""
-        if self.current_screen is not None:
-            self.current_screen.on_exit(self.loop)
-        self.current_screen = screen
-        screen.on_enter(self.loop)
-        self.loop.widget = screen.get_top_level_widget()
-
-    def _on_device_selector_finished(self, selected_device: Device):
-        if selected_device is not None:
-            main_screen = MainScreen(selected_device)
-            self.change_screen(main_screen)
 
 
 if __name__ == "__main__":
