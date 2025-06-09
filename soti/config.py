@@ -11,6 +11,8 @@ PALETTE = [
     ('button', 'white', 'default'),
     ('button focus', 'white,bold', 'dark blue'),
     ('accent', 'yellow,bold', 'default'),
+    ('table header', 'white', 'dark blue'),
+    ('table cell', 'default', 'default')
 ]
 
 # Define icons here.

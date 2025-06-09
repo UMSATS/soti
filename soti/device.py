@@ -14,9 +14,8 @@ class Device(ABC):
         self._write_queue = multiprocessing.Queue()
         self._callback: Optional[Callable[[Message], None]] = None
 
-    def start(self, message_callback: Optional[Callable[[Message], None]] = None):
+    def start(self):
         """Spawns a separate process to read and write messages from queues."""
-        self._callback = message_callback
         if self._process and self._process.is_alive():
             return  # Already running
         self._process = multiprocessing.Process(target=self._run)
@@ -40,7 +39,6 @@ class Device(ABC):
     @abstractmethod
     def _run(self):
         """Override this method to implement specific device behavior."""
-        pass
 
 
 class SerialDevice(Device):
@@ -70,21 +68,8 @@ class SerialDevice(Device):
                 data = ser.read(MSG_SIZE)
                 try:
                     msg = Message.deserialize(data)
-                    if self._callback:
-                        self._callback(msg)
+                    self._read_queue.put(msg)
                 except Exception as e:
                     print(f"[SerialDevice: {self.port}] Deserialization error: {e}")
 
         ser.close()
-
-
-class VirtualDevice(Device):
-    def _run(self):
-        while True:
-            try:
-                msg = self._write_queue.get_nowait()
-                if msg is None: # Check for termination sentinel
-                    break  # Exit process
-            except queue.Empty:
-                pass
-            # Don't read any messages
