@@ -29,9 +29,12 @@ class TableWidget(urwid.WidgetWrap):
     def __init__(self, columns: list[tuple[str, int | Literal['expand']]]):
         self._columns = columns
         header_row = self._create_row([c[0] for c in columns], 'table header')
-        self.row_widgets = urwid.SimpleFocusListWalker([header_row])
+        self.row_widgets = urwid.SimpleFocusListWalker([])
         super().__init__(
-            urwid.ListBox(self.row_widgets)
+            urwid.Frame(
+                urwid.ScrollBar(urwid.ListBox(self.row_widgets)),
+                header=header_row
+            )
         )
 
     def add_row(self, kv_pairs: dict):
