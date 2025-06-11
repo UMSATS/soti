@@ -10,8 +10,11 @@ import urwid
 import screens
 from device import Device
 from message import Message
-from widgets import TableWidget
+from widgets import CommandPrompt, TableWidget
 from session_logger import parse_msg_body
+
+
+COMMAND_LIST = ["help", "send", "cmdlist", "iam"]
 
 
 class MainScreen(screens.Screen):
@@ -40,7 +43,24 @@ class MainScreen(screens.Screen):
             ("Pri", 3),
             ("Arguments", 'expand')
         ])
-        return urwid.Padding(self.table, left=1, right=1)
+        self.command_prompt = CommandPrompt()
+
+        command_list_markup = ["Commands: "]
+        for i, cmd in enumerate(COMMAND_LIST):
+            command_list_markup.append(('accent', cmd))
+            if i < len(COMMAND_LIST)-1:
+                command_list_markup.append(", ")
+
+        bottom_ribbon = urwid.Columns([
+            ('pack', urwid.Text(command_list_markup, wrap='clip')),
+            urwid.Text(["Quit: ", ('accent', "q"), " or ", ('accent', "Ctrl+C")], wrap='clip'),
+            ('pack', urwid.Text("(c) 2025 UMSATS", align='right', wrap='clip'))
+        ], dividechars=8)
+        return urwid.Pile([
+            self.table,
+            ('pack', self.command_prompt),
+            ('pack', bottom_ribbon)
+        ])
 
     def _update(self, loop: urwid.MainLoop, user_data):
         try:
