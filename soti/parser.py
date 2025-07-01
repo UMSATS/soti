@@ -4,8 +4,8 @@ The SOTI parser.
 
 import re
 
-from soti.message import Message
-from soti.utils.constants import (
+from message import Message
+from utils.constants import (
     NodeID, CmdID, COMM_INFO, DATA_SIZE
 )
 
@@ -82,8 +82,8 @@ def parse_send(args: str, default_sender: NodeID) -> Message:
 
     try:
         cmd_id = CmdID(parse_int(parts[0]))
-    except ValueError:
-        raise ArgumentException(f"Invalid command ID '{parts[0]}'")
+    except ValueError as e:
+        raise ArgumentException(f"Invalid command ID '{parts[0]}'") from e
 
     # Assign default values for the command options.
     priority: int = COMM_INFO[cmd_id]["priority"]

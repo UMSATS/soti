@@ -10,18 +10,27 @@ import urwid
 import screens
 from device import Device
 from message import Message
-from widgets import TableWidget, TextPrompt
+from utils.constants import NodeID
+from widgets import Console, TableWidget
 from session_logger import parse_msg_body
+import parser
 
 
 COMMAND_LIST = ["send"]
 
+INTRO_TEXT = """Welcome to the SOTI CLI!
+
+Send messages with:
+send <Command Name> [Message Data] [Options]
+
+"""
 
 class MainScreen(screens.Screen):
     def __init__(self, device: Optional[Device]):
         self.device = device
         self.message_widgets = urwid.SimpleFocusListWalker([])
         self.msg_id = 0
+        self.sender_id = NodeID.CDH
         self.update_alarm = -1
         super().__init__()
 
@@ -43,8 +52,31 @@ class MainScreen(screens.Screen):
             ("Pri", 3),
             ("Arguments", 'expand')
         ])
-        self.command_prompt = TextPrompt([('accent 2', "as"), " CDH ∷ "])
-        self.command_prompt.submit.connect(self._on_text_submitted)
+
+        self.console = Console(('cli prompt prefix', " >> "), output=INTRO_TEXT)
+        self.console.submit.connect(self._on_command_entered)
+
+        top_panel = urwid.LineBox(
+            self.table,
+            title="Bus Traffic",
+            title_align='left',
+            title_attr='title',
+            tlcorner=urwid.LineBox.Symbols.LIGHT.TOP_LEFT_ROUNDED,
+            trcorner=urwid.LineBox.Symbols.LIGHT.TOP_RIGHT_ROUNDED,
+            blcorner=urwid.LineBox.Symbols.LIGHT.BOTTOM_LEFT_ROUNDED,
+            brcorner=urwid.LineBox.Symbols.LIGHT.BOTTOM_RIGHT_ROUNDED
+        )
+
+        bottom_panel = urwid.LineBox(
+            self.console,
+            title="CLI",
+            title_align='left',
+            title_attr='title',
+            tlcorner=urwid.LineBox.Symbols.LIGHT.TOP_LEFT_ROUNDED,
+            trcorner=urwid.LineBox.Symbols.LIGHT.TOP_RIGHT_ROUNDED,
+            blcorner=urwid.LineBox.Symbols.LIGHT.BOTTOM_LEFT_ROUNDED,
+            brcorner=urwid.LineBox.Symbols.LIGHT.BOTTOM_RIGHT_ROUNDED
+        )
 
         command_list_markup = ["Commands: "]
         for i, cmd in enumerate(COMMAND_LIST):
@@ -57,9 +89,10 @@ class MainScreen(screens.Screen):
             urwid.Text(["Quit: ", ('accent', "q"), " or ", ('accent', "Ctrl+C")], wrap='clip'),
             ('pack', urwid.Text("(c) 2025 UMSATS", align='right', wrap='clip'))
         ], dividechars=8)
+
         return urwid.Pile([
-            self.table,
-            ('pack', self.command_prompt),
+            ('weight', 2, top_panel),
+            ('weight', 1, bottom_panel),
             ('pack', bottom_ribbon)
         ])
 
@@ -73,12 +106,19 @@ class MainScreen(screens.Screen):
 
         self.update_alarm = loop.set_alarm_in(0.1, self._update)
 
-    def _on_text_submitted(self, text: str):
-        tokens = text.split()
-        
-        match tokens[0]:
+    def _on_command_entered(self, text: str):
+        parts = text.split()
+        args = " ".join(parts[1:])
+
+        match parts[0]:
             case "send":
-                pass
+                try:
+                    msg = parser.parse_send(args, self.sender_id)
+                    if self.device:
+                        self.device.write(msg)
+                except (ValueError, parser.ArgumentException) as e:
+                    self.console.print(str(e))
+                    return
 
     def _on_message_received(self, msg: Message):
         """Called when a new message arrives."""

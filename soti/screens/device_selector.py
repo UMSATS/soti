@@ -42,17 +42,13 @@ class DeviceSelector(screens.Screen):
         # Create menu of serial devices
         menu = urwid.Padding(urwid.LineBox(
             urwid.ListBox(self.menu_items),
-            title=" Select an Input Device ",
+            title="Select Input Device",
             title_attr='title',
             title_align='center',
-            tline="═",
-            bline="═",
-            lline="│",
-            rline="│",
-            tlcorner="╒",
-            trcorner="╕",
-            blcorner="╘",
-            brcorner="╛"
+            tlcorner=urwid.LineBox.Symbols.LIGHT.TOP_LEFT_ROUNDED,
+            trcorner=urwid.LineBox.Symbols.LIGHT.TOP_RIGHT_ROUNDED,
+            blcorner=urwid.LineBox.Symbols.LIGHT.BOTTOM_LEFT_ROUNDED,
+            brcorner=urwid.LineBox.Symbols.LIGHT.BOTTOM_RIGHT_ROUNDED
         ), width=70, align='center')
 
         # Create footer with keyboard shortcuts

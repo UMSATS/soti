@@ -55,6 +55,37 @@ class TableWidget(urwid.WidgetWrap):
         return row
 
 
+class Console(urwid.WidgetWrap):
+    def __init__(self, prefix: str, output: str = ""):
+        self.output = urwid.Text(output)
+        self.edit = urwid.Edit(prefix, wrap='clip')
+        super().__init__(
+            urwid.Filler(
+                    urwid.Pile(
+                    [
+                        ('pack', self.output),
+                        ('pack', urwid.AttrMap(self.edit, 'cli prompt'))
+                    ]
+                ),
+                valign='bottom'
+            )
+        )
+        self.submit = Signal()
+
+    def selectable(self):
+        return True
+
+    def keypress(self, size, key):
+        if key == 'enter':
+            self.submit.emit(self.edit.get_edit_text())
+            self.edit.edit_text = ""
+            return None
+        return super().keypress(size, key)
+
+    def print(self, line: str):
+        self.output.set_text(self.output.text + line + "\n")
+
+
 class TextPrompt(urwid.WidgetWrap):
     def __init__(self, caption):
         super().__init__(

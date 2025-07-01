@@ -7,11 +7,13 @@ APP_VERSION = "2.0"
 PALETTE = [
     ('soti banner', 'default', 'default'),
     ('soti title', 'yellow,italics', 'default'),
-    ('title', 'default', 'default'),
+    ('title', 'white,bold', 'default'),
     ('button', 'white', 'default'),
     ('button focus', 'white,bold', 'dark blue'),
     ('accent', 'yellow,bold', 'default'),
     ('accent 2', 'light magenta,italics', 'default'),
+    ('cli prompt', 'default', 'dark gray'),
+    ('cli prompt prefix', 'standout', 'default'),
     ('table header', 'white', 'dark blue'),
     ('table cell', 'default', 'default')
 ]
