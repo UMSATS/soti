@@ -55,11 +55,11 @@ class TableWidget(urwid.WidgetWrap):
         return row
 
 
-class CommandPrompt(urwid.WidgetWrap):
-    def __init__(self):
+class TextPrompt(urwid.WidgetWrap):
+    def __init__(self, caption):
         super().__init__(
             urwid.LineBox(
-                urwid.Edit("CDH ∷ ", wrap='clip'),
+                urwid.Edit(caption, wrap='clip'),
                 tlcorner=urwid.LineBox.Symbols.LIGHT.TOP_LEFT_ROUNDED,
                 trcorner=urwid.LineBox.Symbols.LIGHT.TOP_RIGHT_ROUNDED,
                 blcorner=urwid.LineBox.Symbols.LIGHT.BOTTOM_LEFT_ROUNDED,

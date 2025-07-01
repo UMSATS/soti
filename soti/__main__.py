@@ -23,8 +23,7 @@ class App():
         self.current_screen: screens.Screen | None = None
 
         # Switch to the initial screen of the application.
-        initial_screen = screens.DeviceSelector()
-        self.change_screen(initial_screen)
+        self.change_screen(screens.DeviceSelector())
 
     def run(self):
         try:

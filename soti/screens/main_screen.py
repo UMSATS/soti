@@ -10,11 +10,11 @@ import urwid
 import screens
 from device import Device
 from message import Message
-from widgets import CommandPrompt, TableWidget
+from widgets import TableWidget, TextPrompt
 from session_logger import parse_msg_body
 
 
-COMMAND_LIST = ["help", "send", "cmdlist", "iam"]
+COMMAND_LIST = ["send"]
 
 
 class MainScreen(screens.Screen):
@@ -43,7 +43,8 @@ class MainScreen(screens.Screen):
             ("Pri", 3),
             ("Arguments", 'expand')
         ])
-        self.command_prompt = CommandPrompt()
+        self.command_prompt = TextPrompt([('accent 2', "as"), " CDH ∷ "])
+        self.command_prompt.submit.connect(self._on_text_submitted)
 
         command_list_markup = ["Commands: "]
         for i, cmd in enumerate(COMMAND_LIST):
@@ -71,6 +72,13 @@ class MainScreen(screens.Screen):
             pass
 
         self.update_alarm = loop.set_alarm_in(0.1, self._update)
+
+    def _on_text_submitted(self, text: str):
+        tokens = text.split()
+        
+        match tokens[0]:
+            case "send":
+                pass
 
     def _on_message_received(self, msg: Message):
         """Called when a new message arrives."""
