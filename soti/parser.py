@@ -6,7 +6,7 @@ import re
 
 from message import Message
 from utils.constants import (
-    NodeID, CmdID, COMM_INFO, DATA_SIZE
+    NodeID, CmdID, DATA_SIZE
 )
 
 DATA_ARG_RE = re.compile(r'(?:\((\w+)\))?(\S+)')
@@ -68,6 +68,22 @@ def get_implied_type(value: int) -> str:
             raise ValueError(f"{value} is out of range for unsigned 32-bit integer.")
 
 
+def get_implied_recipient(cmd: CmdID) -> NodeID | None:
+    cmd_name_prefix = cmd.name.split('_')[0]
+
+    match cmd_name_prefix:
+        case "CDH":
+            return NodeID.CDH
+        case "PWR":
+            return NodeID.PWR
+        case "ADCS":
+            return NodeID.ADCS
+        case "PLD":
+            return NodeID.PLD
+
+    return None
+
+
 def parse_send(args: str, default_sender: NodeID) -> Message:
     """Parses arguments for the 'send' command.
 
@@ -86,9 +102,9 @@ def parse_send(args: str, default_sender: NodeID) -> Message:
         raise ArgumentException(f"Invalid command ID '{parts[0]}'") from e
 
     # Assign default values for the command options.
-    priority: int = COMM_INFO[cmd_id]["priority"]
+    priority: int = 255
     sender_id: NodeID = default_sender
-    recipient_id: NodeID | None = COMM_INFO[cmd_id]["dest"]
+    recipient_id: NodeID | None = get_implied_recipient(cmd_id)
 
     # represents the bytes that will be sent in the data section of the message
     data = bytearray()

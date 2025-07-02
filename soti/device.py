@@ -8,6 +8,7 @@ from message import Message, MSG_SIZE
 
 
 class Device(ABC):
+    """Abstract interface for all connecting devices."""
     def __init__(self):
         self._process: Optional[multiprocessing.Process] = None
         self._read_queue = multiprocessing.Queue()

@@ -18,11 +18,11 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "tuk/tuk.h"
-#include "tuk/can_wrapper/can_queue.h"
+#include "app.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -43,15 +43,23 @@
 /* Private variables ---------------------------------------------------------*/
 CAN_HandleTypeDef hcan1;
 
-TIM_HandleTypeDef htim16;
-
-UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart2;
 
+/* Definitions for mainThread */
+osThreadId_t mainThreadHandle;
+const osThreadAttr_t mainThread_attributes = {
+  .name = "mainThread",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for LEDThread */
+osThreadId_t LEDThreadHandle;
+const osThreadAttr_t LEDThread_attributes = {
+  .name = "LEDThread",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
 /* USER CODE BEGIN PV */
-CANQueue uart_to_can_queue;
-CANQueue can_to_uart_queue;
-uint8_t can_rx_data[11];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -59,13 +67,10 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_CAN1_Init(void);
-static void MX_UART4_Init(void);
-static void MX_TIM16_Init(void);
+void App_Main_Thread(void *argument);
+extern void App_LED_Thread(void *argument);
+
 /* USER CODE BEGIN PFP */
-void serializeCANMessage(CANMessage* message, uint8_t* serializedData);
-void deserializeCANMessage(CANMessage* message, const uint8_t* deserializedData);
-void on_message_received(CANMessage msg);
-void on_error_occured(CANWrapper_ErrorInfo error);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -104,58 +109,52 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_CAN1_Init();
-  MX_UART4_Init();
-  MX_TIM16_Init();
   /* USER CODE BEGIN 2 */
-  CANWrapper_InitTypeDef cw_init = {
-    .node_id = NODE_CDH,
-    .notify_of_acks = true,
-
-    .hcan = &hcan1,
-    .htim = &htim16,
-
-    .message_callback = &on_message_received,
-    .error_callback = &on_error_occured
-  };
-
-  uart_to_can_queue = CANQueue_Create();
-  can_to_uart_queue = CANQueue_Create();
-  HAL_UART_Receive_IT(&huart2, can_rx_data, sizeof(can_rx_data));
-  CANWrapper_Init(cw_init);
   /* USER CODE END 2 */
+
+  /* Init scheduler */
+  osKernelInitialize();
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* creation of mainThread */
+  mainThreadHandle = osThreadNew(App_Main_Thread, NULL, &mainThread_attributes);
+
+  /* creation of LEDThread */
+  LEDThreadHandle = osThreadNew(App_LED_Thread, NULL, &LEDThread_attributes);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  App_Init();
+  /* USER CODE END RTOS_THREADS */
+
+  /* USER CODE BEGIN RTOS_EVENTS */
+  /* add events, ... */
+  /* USER CODE END RTOS_EVENTS */
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    CANWrapper_Poll_Messages();
-    CANWrapper_Poll_Errors();
-
-    if (!CANQueue_IsEmpty(&can_to_uart_queue))
-    {
-      // Toggle the LED.
-      HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-
-      CANQueueItem msg;
-      CANQueue_Dequeue(&can_to_uart_queue, &msg);
-
-      // Serialize the CANMessage to transfer over UART.
-      uint8_t serialized_data[11];
-      serializeCANMessage(&msg.msg, serialized_data);
-
-      // Transfer data over UART.
-      HAL_UART_Transmit(&huart2, serialized_data, sizeof(serialized_data), HAL_MAX_DELAY);
-    }
-
-    if (!CANQueue_IsEmpty(&uart_to_can_queue))
-    {
-      // Toggle the LED.
-      HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-
-      CANQueueItem msg;
-      CANQueue_Dequeue(&uart_to_can_queue, &msg);
-      CANWrapper_Transmit(msg.msg.recipient, &msg.msg);
-    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -250,73 +249,6 @@ static void MX_CAN1_Init(void)
 }
 
 /**
-  * @brief TIM16 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM16_Init(void)
-{
-
-  /* USER CODE BEGIN TIM16_Init 0 */
-
-  /* USER CODE END TIM16_Init 0 */
-
-  /* USER CODE BEGIN TIM16_Init 1 */
-
-  /* USER CODE END TIM16_Init 1 */
-  htim16.Instance = TIM16;
-  htim16.Init.Prescaler = 80 - 1;
-  htim16.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim16.Init.Period = 5000 - 1;
-  htim16.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim16.Init.RepetitionCounter = 0;
-  htim16.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim16) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM16_Init 2 */
-
-  /* USER CODE END TIM16_Init 2 */
-
-}
-
-/**
-  * @brief UART4 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_UART4_Init(void)
-{
-
-  /* USER CODE BEGIN UART4_Init 0 */
-
-  /* USER CODE END UART4_Init 0 */
-
-  /* USER CODE BEGIN UART4_Init 1 */
-
-  /* USER CODE END UART4_Init 1 */
-  huart4.Instance = UART4;
-  huart4.Init.BaudRate = 115200;
-  huart4.Init.WordLength = UART_WORDLENGTH_8B;
-  huart4.Init.StopBits = UART_STOPBITS_1;
-  huart4.Init.Parity = UART_PARITY_NONE;
-  huart4.Init.Mode = UART_MODE_TX_RX;
-  huart4.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart4.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart4.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart4.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart4) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN UART4_Init 2 */
-
-  /* USER CODE END UART4_Init 2 */
-
-}
-
-/**
   * @brief USART2 Initialization Function
   * @param None
   * @retval None
@@ -385,7 +317,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(LD4_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
@@ -393,81 +325,46 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void on_message_received(CANMessage msg)
-{
-  CANQueue_Enqueue(&can_to_uart_queue, (CANQueueItem){ .msg = msg });
-}
+/* USER CODE END 4 */
 
-void on_error_occured(CANWrapper_ErrorInfo error)
-{
-	while (1) {
-		// Forever blink.
-		int counter = 0;
-		while (counter < 65535) {
-			counter++;
-		}
-
-		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-	}
-}
-
-
+/* USER CODE BEGIN Header_App_Main_Thread */
 /**
-  * @brief  EXTI line detection callback.
-  * @param  GPIO_Pin Specifies the port pin connected to corresponding EXTI line.
+  * @brief  Function implementing the mainThread thread.
+  * @param  argument: Not used
   * @retval None
   */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+/* USER CODE END Header_App_Main_Thread */
+__weak void App_Main_Thread(void *argument)
 {
-  // Check if the push button has been pressed.
-  if (GPIO_Pin == GPIO_PIN_13)
+  /* USER CODE BEGIN 5 */
+  /* Infinite loop */
+  for(;;)
   {
-    // Create a fake message and send it over UART.
-    CANMessage msg = {
-      .cmd = CMD_CDH_PROCESS_TELEMETRY_REPORT
-    };
-    CANQueue_Enqueue(&can_to_uart_queue, (CANQueueItem){ .msg = msg });
+    osDelay(1);
   }
+  /* USER CODE END 5 */
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM6 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-  // Deserialize the received message.
-  CANMessage msg;
-  deserializeCANMessage(&msg, can_rx_data);
+  /* USER CODE BEGIN Callback 0 */
 
-  CANQueue_Enqueue(&uart_to_can_queue, (CANQueueItem){ .msg = msg });
-
-  // Set up the next interrupt.
-  HAL_UART_Receive_IT(&huart2, can_rx_data, sizeof(can_rx_data));
-}
-
-void serializeCANMessage(CANMessage* message, uint8_t* serializedData)
-{
-  serializedData[0] = message->priority;
-  serializedData[1] = message->sender;
-  serializedData[2] = message->recipient;
-  serializedData[3] = message->cmd;
-
-  for (int i = 0; i < CAN_MAX_BODY_SIZE; i++)
-  {
-    serializedData[4 + i] = message->body[i];
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM6) {
+    HAL_IncTick();
   }
-}
+  /* USER CODE BEGIN Callback 1 */
 
-void deserializeCANMessage(CANMessage* message, const uint8_t* deserializedData)
-{
-	message->priority = deserializedData[0];
-	message->sender = deserializedData[1];
-	message->recipient = deserializedData[2];
-	message->cmd = deserializedData[3];
-
-  for (int i = 0; i < CAN_MAX_BODY_SIZE; i++)
-  {
-  	message->body[i] = deserializedData[4 + i];
-  }
+  /* USER CODE END Callback 1 */
 }
-/* USER CODE END 4 */
 
 /**
   * @brief  This function is executed in case of error occurrence.

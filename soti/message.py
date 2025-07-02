@@ -5,7 +5,10 @@ from utils.constants import DATA_SIZE, CmdID, NodeID
 from session_logger import parse_msg_body
 
 # The length of a serialized message in bytes.
-MSG_SIZE = 11
+MSG_SIZE = 13
+
+# Max size of a message body.
+MAX_BODY_SIZE = 7
 
 @dataclass
 class Message:
@@ -32,24 +35,27 @@ class Message:
     @classmethod
     def deserialize(cls, msg_bytes: bytes) -> "Message":
         """Create a message from serialized bytes."""
-        priority = msg_bytes[0]
-        sender = NodeID(msg_bytes[1])
-        recipient = NodeID(msg_bytes[2])
-        cmd_id = CmdID(msg_bytes[3])
-        body = msg_bytes[4:]
+        body_end_idx = MAX_BODY_SIZE + 1
 
-        return cls(priority, sender, recipient, cmd_id, body)
+        cmd = CmdID(msg_bytes[0])
+        body = msg_bytes[1:body_end_idx]
+        body_size = msg_bytes[body_end_idx]
+        priority = int(msg_bytes[body_end_idx+1])
+        sender = NodeID(msg_bytes[body_end_idx+2])
+        recipient = NodeID(msg_bytes[body_end_idx+3])
+        is_ack = msg_bytes[body_end_idx+4]
+
+        return cls(priority, sender, recipient, cmd, body)
 
     def serialize(self) -> bytes:
         """Return the serialized bytes of the message."""
-        return bytes(bytearray([
+        return bytes([self.cmd_id.value]) + self.body + bytes(
+            [255, # Infer body size
             self.priority,
             self.sender.value,
             self.recipient.value,
-            self.cmd_id.value])
-            + self.body
+            0] # Not an ACK (FIXME)
         )
-
 
     def as_dict(self) -> dict:
         """Return the message parameters as a dictionary."""
