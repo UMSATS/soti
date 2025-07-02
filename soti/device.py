@@ -8,7 +8,7 @@ from message import Message, MSG_SIZE
 
 
 class Device(ABC):
-    """Abstract interface for all connecting devices."""
+    """Abstract interface for all connectable devices."""
     def __init__(self):
         self._process: Optional[multiprocessing.Process] = None
         self._read_queue = multiprocessing.Queue()
@@ -43,6 +43,7 @@ class Device(ABC):
 
 
 class SerialDevice(Device):
+    """A device connected via PySerial."""
     def __init__(self,  port: str, baudrate: int = 115200):
         super().__init__()
         self.port = port
@@ -74,3 +75,17 @@ class SerialDevice(Device):
                     print(f"[SerialDevice: {self.port}] Deserialization error: {e}")
 
         ser.close()
+
+
+class VirtualDevice(Device):
+    """For when no device is selected."""
+    def _run(self):
+        # Echo messages back to the user.
+        while True:
+            try:
+                msg = self._write_queue.get_nowait()
+                if msg is None: # Check for termination sentinel
+                    break  # Exit process
+                self._read_queue.put(msg)
+            except queue.Empty:
+                pass

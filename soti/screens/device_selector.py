@@ -9,7 +9,7 @@ import serial.tools.list_ports
 
 import config
 import screens
-from device import Device, SerialDevice
+from device import Device, SerialDevice, VirtualDevice
 from utils.constants import RES_DIR
 from widgets import IconButton
 
@@ -89,7 +89,7 @@ class DeviceSelector(screens.Screen):
         no_device = DeviceOption(
             "No Device",
             "Proceed without connecting to a device.",
-            device=None,
+            device=VirtualDevice(),
             icon=config.ICONS['PORT_NONE']
         )
         devices.append(no_device)
@@ -104,7 +104,7 @@ class DeviceSelector(screens.Screen):
             w.clicked.connect(self._on_device_selected, args=(opt.device,))
             self.menu_items.append(w)
 
-    def _on_device_selected(self, device: Optional[Device]):
+    def _on_device_selected(self, device: Device):
         """Called when a device is selected by the user."""
         next_screen = screens.MainScreen(device)
         self.change_screen.emit(next_screen)

@@ -2,7 +2,6 @@
 Main screen with on-screen messages and a command prompt.
 """
 
-from typing import Optional
 import queue
 
 import urwid
@@ -26,7 +25,7 @@ send <Command Name> [Message Data] [Options]
 """
 
 class MainScreen(screens.Screen):
-    def __init__(self, device: Optional[Device]):
+    def __init__(self, device: Device):
         self.device = device
         self.message_widgets = urwid.SimpleFocusListWalker([])
         self.msg_id = 0
@@ -35,14 +34,12 @@ class MainScreen(screens.Screen):
         super().__init__()
 
     def on_enter(self, loop: urwid.MainLoop):
-        if self.device:
-            self.device.start()
-            self.update_alarm = loop.set_alarm_in(0.1, self._update)
+        self.device.start()
+        self.update_alarm = loop.set_alarm_in(0.1, self._update)
 
     def on_exit(self, loop: urwid.MainLoop):
-        if self.device:
-            self.device.stop()
-            loop.remove_alarm(self.update_alarm)
+        self.device.stop()
+        loop.remove_alarm(self.update_alarm)
 
     def _create_root_widget(self) -> urwid.Widget:
         self.table = TableWidget(columns=[
@@ -114,8 +111,7 @@ class MainScreen(screens.Screen):
             case "send":
                 try:
                     msg = parser.parse_send(args, self.sender_id)
-                    if self.device:
-                        self.device.write(msg)
+                    self.device.write(msg)
                 except (ValueError, parser.ArgumentException) as e:
                     self.console.print(str(e))
                     return
