@@ -4,7 +4,7 @@ import queue
 from abc import ABC, abstractmethod
 from typing import Callable, Optional
 
-from message import Message, MSG_SIZE
+from parser import Message, MSG_SIZE
 
 
 class Device(ABC):

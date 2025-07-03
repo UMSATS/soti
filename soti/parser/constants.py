@@ -1,19 +1,6 @@
-"""Global constants used in the program."""
+"""Constants for the SOTI parser."""
 
 from enum import Enum, auto
-from pathlib import Path
-
-ROOT_DIR = Path(__file__).resolve().parent.parent
-
-SAVE_DATA_DIR = ROOT_DIR / "save-data"
-
-SESSIONS_DIR = SAVE_DATA_DIR / "sessions"
-
-RES_DIR = ROOT_DIR / "res"
-
-# Used to name session files with datetime.strftime()
-SESSION_FILE_FORMAT = "%Y-%m-%d_%H%M%S"
-
 
 class NodeID(Enum):
     """Associates a subsystem id with a human-readable name for message history."""

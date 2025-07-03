@@ -5,20 +5,21 @@ import os
 import struct
 from queue import Empty
 from enum import Enum
-from utils.constants import NodeID, CmdID, SAVE_DATA_DIR, SESSIONS_DIR, SESSION_FILE_FORMAT
-from message import Message
+
+import config
+from parser import NodeID, CmdID, Message
 
 
 def datetime_to_filename(time: datetime):
-    file_format = time.strftime(SESSION_FILE_FORMAT)
+    file_format = time.strftime(config.SESSION_FILE_FORMAT)
     return f"{file_format}.log"
 
 
 def save_log(filename: str, start_time: datetime, end_time: datetime, port, msg_log: str):
-    if not os.path.exists(SAVE_DATA_DIR):
-        os.mkdir(SAVE_DATA_DIR)
-    if not os.path.exists(SESSIONS_DIR):
-        os.mkdir(SESSIONS_DIR)
+    if not os.path.exists(config.SAVE_DATA_DIR):
+        os.mkdir(config.SAVE_DATA_DIR)
+    if not os.path.exists(config.SESSIONS_DIR):
+        os.mkdir(config.SESSIONS_DIR)
 
     session_length = end_time - start_time
     hours, remainder = divmod(session_length.seconds, 3600)
@@ -39,7 +40,7 @@ def save_log(filename: str, start_time: datetime, end_time: datetime, port, msg_
     log_yaml = dict_to_yaml(log_dict, 0)
     log_yaml += msg_log
 
-    with open(SESSIONS_DIR / filename, 'w', encoding="utf_8") as history:
+    with open(config.SESSIONS_DIR / filename, 'w', encoding="utf_8") as history:
         history.write(log_yaml)
 
 

@@ -4,10 +4,9 @@ The SOTI parser.
 
 import re
 
-from message import Message, MAX_BODY_SIZE
-from utils.constants import (
-    NodeID, CmdID
-)
+from .message import Message, MAX_BODY_SIZE
+from .constants import NodeID, CmdID
+
 
 DATA_ARG_RE = re.compile(r'(?:\((\w+)\))?(\S+)')
 

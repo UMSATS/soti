@@ -10,7 +10,6 @@ import serial.tools.list_ports
 import config
 import screens
 from device import Device, SerialDevice, VirtualDevice
-from utils.constants import RES_DIR
 from widgets import IconButton
 
 
@@ -32,7 +31,7 @@ class DeviceSelector(screens.Screen):
         self._refresh_menu_items()
 
     def _create_root_widget(self) -> urwid.Widget:
-        with open(RES_DIR / "banner.txt", 'r', encoding='utf-8') as file:
+        with open(config.RES_DIR / "banner.txt", 'r', encoding='utf-8') as file:
             banner_art = file.read()
 
         # Create the banner and title.

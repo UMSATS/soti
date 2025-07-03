@@ -9,11 +9,9 @@ import urwid
 
 import screens
 from device import Device
-from message import Message
-from utils.constants import NodeID
 from widgets import Console, TableWidget
 from session_logger import parse_msg_body
-import parser
+from parser import NodeID, parser, Message
 
 
 COMMAND_LIST = ["send"]

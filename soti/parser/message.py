@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from utils.constants import CmdID, NodeID
+from .constants import CmdID, NodeID
 
 # The length of a serialized message in bytes.
 MSG_SIZE = 13
