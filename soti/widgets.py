@@ -84,27 +84,3 @@ class Console(urwid.WidgetWrap):
 
     def print(self, line: str):
         self.output.set_text(self.output.text + line + "\n")
-
-
-class TextPrompt(urwid.WidgetWrap):
-    def __init__(self, caption):
-        super().__init__(
-            urwid.LineBox(
-                urwid.Edit(caption, wrap='clip'),
-                tlcorner=urwid.LineBox.Symbols.LIGHT.TOP_LEFT_ROUNDED,
-                trcorner=urwid.LineBox.Symbols.LIGHT.TOP_RIGHT_ROUNDED,
-                blcorner=urwid.LineBox.Symbols.LIGHT.BOTTOM_LEFT_ROUNDED,
-                brcorner=urwid.LineBox.Symbols.LIGHT.BOTTOM_RIGHT_ROUNDED
-            )
-        )
-        self.submit = Signal()
-
-    def selectable(self):
-        return True
-
-    def keypress(self, size, key):
-        if key == 'enter':
-            self.submit.emit(self._w.base_widget.get_edit_text())
-            self._w.base_widget.edit_text = ""
-            return None
-        return super().keypress(size, key)
