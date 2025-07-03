@@ -2,6 +2,7 @@
 Main screen with on-screen messages and a command prompt.
 """
 
+import datetime
 import queue
 
 import urwid
@@ -118,14 +119,14 @@ class MainScreen(screens.Screen):
 
     def _on_message_received(self, msg: Message):
         """Called when a new message arrives."""
-        transaction = f"{str(msg.sender.name)} → {str(msg.recipient.name)} : {str(msg.cmd_id.name)}"
-        body_contents = parse_msg_body(msg.cmd_id, msg.body)
+        transaction = f"{str(msg.sender.name)} → {str(msg.recipient.name)} : {str(msg.cmd.name)}"
+        body_contents = parse_msg_body(msg.cmd, msg.body)
         arguments = ""
         for key, value in body_contents.items():
             arguments += f"{key}={value}, "
         self.table.add_row({
             'ID': str(self.msg_id),
-            'Timestamp': str(msg.time),
+            'Timestamp': str(datetime.datetime.now().strftime("%T")),
             'Transaction': transaction,
             'Pri': str(msg.priority),
             'Arguments': arguments
