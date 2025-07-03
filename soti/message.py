@@ -1,8 +1,6 @@
-from datetime import datetime
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-from utils.constants import DATA_SIZE, CmdID, NodeID
-from session_logger import parse_msg_body
+from utils.constants import CmdID, NodeID
 
 # The length of a serialized message in bytes.
 MSG_SIZE = 13
@@ -12,25 +10,13 @@ MAX_BODY_SIZE = 7
 
 @dataclass
 class Message:
-    # serial parameters
+    cmd: CmdID
+    body: bytes
+    body_size: int
     priority: int
     sender: NodeID
     recipient: NodeID
-    cmd_id: CmdID
-    body: bytes = field(default_factory=([0] * 7))
-    # additional parameters
-    source: str = field(default="unspecified")
-    time: datetime = field(default_factory=
-        lambda: datetime.now().strftime("%T")
-    )
-
-    def __post_init__(self):
-        # Ensure the data field is the correct length.
-        data = bytearray(self.body)
-        if len(data) > DATA_SIZE:
-            self.body = bytes(data[:DATA_SIZE])  # Truncate to the specified length
-        elif len(data) < DATA_SIZE:
-            self.body = bytes(data + bytearray(DATA_SIZE - len(data)))  # Extend with zeroes
+    is_ack: bool
 
     @classmethod
     def deserialize(cls, msg_bytes: bytes) -> "Message":
@@ -39,32 +25,20 @@ class Message:
 
         cmd = CmdID(msg_bytes[0])
         body = msg_bytes[1:body_end_idx]
-        body_size = msg_bytes[body_end_idx]
+        body_size = int(msg_bytes[body_end_idx])
         priority = int(msg_bytes[body_end_idx+1])
         sender = NodeID(msg_bytes[body_end_idx+2])
         recipient = NodeID(msg_bytes[body_end_idx+3])
-        is_ack = msg_bytes[body_end_idx+4]
+        is_ack = bool(msg_bytes[body_end_idx+4])
 
-        return cls(priority, sender, recipient, cmd, body)
+        return cls(cmd, body, body_size, priority, sender, recipient, is_ack)
 
     def serialize(self) -> bytes:
         """Return the serialized bytes of the message."""
-        return bytes([self.cmd_id.value]) + self.body + bytes(
-            [255, # Infer body size
+        return bytes([self.cmd.value]) + self.body + bytes([
+            self.body_size,
             self.priority,
             self.sender.value,
             self.recipient.value,
-            0] # Not an ACK (FIXME)
-        )
-
-    def as_dict(self) -> dict:
-        """Return the message parameters as a dictionary."""
-        return {
-            "time": self.time,
-            "source": self.source,
-            "priority": self.priority,
-            "sender-id": self.sender,
-            "recipient-id": self.recipient,
-            "cmd": self.cmd_id,
-            "body": parse_msg_body(self.cmd_id, self.body)
-        }
+            int(self.is_ack)
+        ])

@@ -14,9 +14,6 @@ RES_DIR = ROOT_DIR / "res"
 # Used to name session files with datetime.strftime()
 SESSION_FILE_FORMAT = "%Y-%m-%d_%H%M%S"
 
-# The length of a message's data payload in bytes.
-DATA_SIZE = 7
-
 
 class NodeID(Enum):
     """Associates a subsystem id with a human-readable name for message history."""

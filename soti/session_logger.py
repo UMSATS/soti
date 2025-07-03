@@ -2,11 +2,11 @@
 
 import datetime
 import os
-import string
 import struct
 from queue import Empty
 from enum import Enum
 from utils.constants import NodeID, CmdID, SAVE_DATA_DIR, SESSIONS_DIR, SESSION_FILE_FORMAT
+from message import Message
 
 
 def datetime_to_filename(time: datetime):
@@ -53,7 +53,7 @@ def log_messages(write_msg_queue, stop_flag, port):
             try:
                 new_msg = write_msg_queue.get(block=False)
 
-                new_msg_dict = new_msg.as_dict()
+                new_msg_dict = msg_as_dict(new_msg)
                 if new_msg.source == "port":
                     print(f"Message Parsed: {new_msg_dict}")
 
@@ -69,6 +69,19 @@ def log_messages(write_msg_queue, stop_flag, port):
         filename = datetime_to_filename(start_time)
         end_time = datetime.datetime.now()
         save_log(filename, start_time, end_time, port, msg_log)
+
+
+def msg_as_dict(msg: Message) -> dict:
+    """Return the message as a dictionary."""
+    return {
+        "time": msg.time, # FIXME
+        "source": msg.source, # FIXME
+        "priority": msg.priority,
+        "sender-id": msg.sender,
+        "recipient-id": msg.recipient,
+        "cmd": msg.cmd_id,
+        "body": parse_msg_body(msg.cmd_id, msg.body)
+    }
 
 
 def dict_to_yaml(d: dict, level: int, listItem: bool = False, recursive: bool = False) -> str:

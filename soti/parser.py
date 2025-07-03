@@ -4,9 +4,9 @@ The SOTI parser.
 
 import re
 
-from message import Message
+from message import Message, MAX_BODY_SIZE
 from utils.constants import (
-    NodeID, CmdID, DATA_SIZE
+    NodeID, CmdID
 )
 
 DATA_ARG_RE = re.compile(r'(?:\((\w+)\))?(\S+)')
@@ -133,7 +133,7 @@ def parse_send(args: str, default_sender: NodeID) -> Message:
                     raise ArgumentException(f"Unknown option '{key}'")
 
             # treat as data argument
-            elif data_index < DATA_SIZE:
+            elif data_index < MAX_BODY_SIZE:
                 data_type = None
                 data_size = 0
                 is_signed = False
@@ -177,4 +177,12 @@ def parse_send(args: str, default_sender: NodeID) -> Message:
     if recipient_id is None:
         raise ArgumentException(f"You must specify a recipient with the 'to' option for {cmd_id.name}")
 
-    return Message(priority, sender_id, recipient_id, cmd_id, bytes(data), source="user")
+    return Message(
+        cmd_id,
+        bytes(data),
+        255, # Infer body size
+        priority,
+        sender_id,
+        recipient_id,
+        False
+    )
