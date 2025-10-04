@@ -72,16 +72,6 @@ void on_error_occured(CANWrapper_ErrorInfo error);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-CANWrapper_InitTypeDef wc_init = {
-		.node_id = NODE_CDH,
-		.notify_of_acks = true,
-
-		.hcan = &hcan1,
-		.htim = &htim16,
-
-		.message_callback = &on_message_received,
-		.error_callback = &on_error_occured
-};
 /* USER CODE END 0 */
 
 /**
@@ -118,38 +108,12 @@ int main(void)
   MX_I2C3_Init();
   MX_TIM16_Init();
   /* USER CODE BEGIN 2 */
-  LCD_INIT();
-  char *str = "WELCOME TO SOTI!";
-  LCD_PRINT_STR(str, 0);
-  CANQueue groundToSatelliteQueue = CANQueue_Create();
-  HAL_UART_Receive_IT(&huart3, canRxData, sizeof(canRxData));
-  CANWrapper_Init(wc_init);
-  LEDs_Init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-  	CANWrapper_Poll_Messages();
-  	CANWrapper_Poll_Errors();
-
-    if (!CANQueue_IsEmpty(&groundToSatelliteQueue))
-    {
-      //getting message from the queue.
-    	CANQueueItem receivedData;
-      CANQueue_Dequeue(&groundToSatelliteQueue, &receivedData);
-
-      CANMessage message = receivedData.msg;
-
-      //update the sender ID
-      CANWrapper_Set_Node_ID(message.sender);
-
-      NodeID recipient = message.recipient;
-
-      //transferring data over CAN.
-      CANWrapper_Transmit(recipient, &message);
-    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
