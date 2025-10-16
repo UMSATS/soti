@@ -1,0 +1,11 @@
+[project]
+name = "soti"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pyserial>=3.5",
+    "serial>=0.0.97",
+    "urwid>=3.0.3",
+]
