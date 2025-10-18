@@ -117,7 +117,13 @@ class MainScreen(screens.Screen):
 
     def _on_message_received(self, msg: Message):
         """Called when a new message arrives."""
-        transaction = f"{str(msg.sender.name)} → {str(msg.recipient.name)} : {str(msg.cmd.name)}"
+        # fix ack message distinction.
+        if(msg.is_ack):
+            transaction = f"{str(msg.recipient.name)} ← {str(msg.sender.name)} : {str(msg.cmd.name)}"
+        else:
+            transaction = f"{str(msg.sender.name)} → {str(msg.recipient.name)} : {str(msg.cmd.name)}"
+        # fix ack message distinction.
+
         body_contents = parse_msg_body(msg.cmd, msg.body)
         arguments = ""
         for key, value in body_contents.items():
