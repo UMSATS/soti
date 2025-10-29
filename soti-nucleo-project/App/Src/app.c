@@ -132,6 +132,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		CANMessage msg = {
 				.cmd = CMD_CDH_PROCESS_TELEMETRY_REPORT
 		};
+
+		// Send another message with is_ack set as 1.
+		CANMessage ack_msg = {
+				.cmd = CMD_CDH_PROCESS_TELEMETRY_REPORT,
+				.is_ack = 1
+		};
 		osMessageQueuePut(s_output_queue, &msg, 0U, 0U);
 	}
 }
