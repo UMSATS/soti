@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 import urwid
 
-from soti_signal import Signal
+from umsats_soti.soti_signal import Signal
 
 class Screen(ABC):
     def __init__(self):

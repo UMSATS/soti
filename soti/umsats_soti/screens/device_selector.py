@@ -7,10 +7,10 @@ from typing import Optional
 import urwid
 import serial.tools.list_ports
 
-import config
-import screens
-from device import Device, SerialDevice, VirtualDevice
-from widgets import IconButton
+import umsats_soti.config as config
+import umsats_soti.screens as screens
+from umsats_soti.device import Device, SerialDevice, VirtualDevice
+from umsats_soti.widgets import IconButton
 
 
 class DeviceOption:

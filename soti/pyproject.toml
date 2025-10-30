@@ -1,5 +1,5 @@
 [project]
-name = "soti"
+name = "umsats-soti"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -9,3 +9,10 @@ dependencies = [
     "serial>=0.0.97",
     "urwid>=3.0.3",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+soti = "umsats_soti.__main__:main"

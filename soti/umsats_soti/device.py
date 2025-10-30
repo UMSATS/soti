@@ -4,7 +4,7 @@ import queue
 from abc import ABC, abstractmethod
 from typing import Callable, Optional
 
-from parser import Message, MSG_SIZE
+from umsats_soti.parser import Message, MSG_SIZE
 
 
 class Device(ABC):
