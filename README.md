@@ -29,7 +29,7 @@ On Windows, here is a PowerShell command (make sure you use PowerShell, not cmd.
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-Make sure uv is available by running `uv --version`. You should get output like this, depending on how you installed uv:
+Make sure uv is available by running `uv --version`. You should get output that looks something like this:
 
 ```sh
 uv 0.9.5 (Homebrew 2025-10-21)
@@ -39,7 +39,7 @@ uv 0.9.5 (Homebrew 2025-10-21)
 Finally, you can install SOTI using the following command:
 
 ```sh
-uv tool install 'git+https://github.com/UMSATS/soti@dev#subdirectory=soti'
+uv tool install 'git+https://github.com/UMSATS/soti@main#subdirectory=soti'
 
 # now you can run SOTI like this:
 soti
@@ -48,7 +48,14 @@ soti
 Alternately, if you just want to run SOTI once, use this command. It will download everything you need and run automatically:
 
 ```sh
-uvx --from 'git+https://github.com/UMSATS/soti@dev#subdirectory=soti' soti
+uvx --from 'git+https://github.com/UMSATS/soti@main#subdirectory=soti' soti
+```
+
+### Update SOTI
+To update, use uv's builtin updater.
+
+```sh
+uv tool upgrade umsats_soti
 ```
 
 ## Development
