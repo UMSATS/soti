@@ -6,8 +6,8 @@ import struct
 from queue import Empty
 from enum import Enum
 
-import config
-from parser import NodeID, CmdID, Message
+import umsats_soti.config
+from umsats_soti.parser import NodeID, CmdID, Message
 
 
 def datetime_to_filename(time: datetime):

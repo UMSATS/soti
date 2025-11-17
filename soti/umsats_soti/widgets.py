@@ -5,7 +5,7 @@ Collection of re-useable widgets created for the SOTI TUI.
 from typing import Literal
 import urwid
 
-from soti_signal import Signal
+from umsats_soti.soti_signal import Signal
 
 class IconButton(urwid.WidgetWrap):
     def __init__(self, icon: str, label: str):

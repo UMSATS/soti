@@ -7,11 +7,11 @@ import queue
 
 import urwid
 
-import screens
-from device import Device
-from widgets import Console, TableWidget
-from session_logger import parse_msg_body
-from parser import NodeID, parser, Message
+import umsats_soti.screens as screens
+from umsats_soti.device import Device
+from umsats_soti.widgets import Console, TableWidget
+from umsats_soti.session_logger import parse_msg_body
+from umsats_soti.parser import NodeID, parser, Message
 
 
 COMMAND_LIST = ["send"]

@@ -4,8 +4,8 @@ Entry point of the application. This is where all global state is managed.
 
 import urwid
 
-import config
-import screens
+import umsats_soti.config as config
+import umsats_soti.screens as screens
 
 
 class App():
@@ -51,5 +51,9 @@ class App():
             raise urwid.ExitMainLoop()
 
 
+def main():
+    app = App()
+    app.run()
+
 if __name__ == "__main__":
-    App().run()
+    main()
