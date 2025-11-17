@@ -12,7 +12,7 @@ SOTI shall:
 - Be able to run custom testing scripts. The testing scripts shall be for individual systems, or for the entire satellite.
 
 ## Installation
-SOTI is published on the Python Package Index (PyPI), so using it on your computer is just two steps.
+SOTI is available as a Python package, so using it on your computer is just two steps.
 
 ### Install uv
 First you need to install uv, which is a package manager for Python. If you use a package manager like Homebrew (macOS), winget (Windows), or your Linux distribution's package manager, use that to install uv. Further instructions are available in [uv's documentation](https://docs.astral.sh/uv/getting-started/installation/). If you don't use a package manager, here are some instructions for installing it directly.
