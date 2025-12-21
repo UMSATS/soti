@@ -12,6 +12,7 @@ class Message:
     cmd_id: CmdID
     body: bytes = field(default_factory=([0] * 7))
     # additional parameters
+    is_ack: bool = field(default=False)
     source: str = field(default="unspecified")
     time: datetime = field(default_factory=
         lambda: datetime.now().strftime("%T")
@@ -56,5 +57,6 @@ class Message:
             "sender-id": self.sender,
             "recipient-id": self.recipient,
             "cmd": self.cmd_id,
-            "body": parse_msg_body(self.cmd_id, self.body)
+            "body": parse_msg_body(self.cmd_id, self.body),
+            "ack": self.is_ack,
         }

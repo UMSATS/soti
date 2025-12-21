@@ -88,6 +88,8 @@ def parse_send(args: str, default_sender: NodeID) -> Message:
     priority: int = COMM_INFO[cmd_id]["priority"]
     sender_id: NodeID = default_sender
     recipient_id: NodeID | None = COMM_INFO[cmd_id]["dest"]
+    is_ack: bool = False
+
 
     # represents the bytes that will be sent in the data section of the message
     data = bytearray()
@@ -112,6 +114,13 @@ def parse_send(args: str, default_sender: NodeID) -> Message:
                         recipient_id = NodeID(parse_int(value))
                     except ValueError as exc:
                         raise ArgumentException(f"Invalid node ID '{value}'") from exc
+                elif key == "ack":
+                    if value.lower() == "true":
+                        is_ack = True
+                    elif value.lower() == "false":
+                        is_ack = False
+                    else:
+                        raise ArgumentException(f"Invalid value for ack '{value}'. Expected true or false")
                 else:
                     raise ArgumentException(f"Unknown option '{key}'")
 
@@ -160,4 +169,4 @@ def parse_send(args: str, default_sender: NodeID) -> Message:
     if recipient_id is None:
         raise ArgumentException(f"You must specify a recipient with the 'to' option for {cmd_id.name}")
 
-    return Message(priority, sender_id, recipient_id, cmd_id, bytes(data), source="user")
+    return Message(priority, sender_id, recipient_id, cmd_id, bytes(data), is_ack=is_ack, source="user")
