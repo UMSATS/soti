@@ -114,6 +114,8 @@ class MainScreen(screens.Screen):
                 except (ValueError, parser.ArgumentException) as e:
                     self.console.print(str(e))
                     return
+            case _:
+                self.console.print(f"Unknown command: {parts[0]}")
 
     def _on_message_received(self, msg: Message):
         """Called when a new message arrives."""
