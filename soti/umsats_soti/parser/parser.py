@@ -95,11 +95,13 @@ def parse_send(args: str, default_sender: NodeID) -> Message:
     """
     parts = args.split()
 
+    if(len(parts) == 0):
+        raise ValueError("No arguments provided")
     try:
         cmd_id = CmdID(parse_int(parts[0]))
     except ValueError as e:
         raise ArgumentException(f"Invalid command ID '{parts[0]}'") from e
-
+        
     # Assign default values for the command options.
     priority: int = 255
     sender_id: NodeID = default_sender
