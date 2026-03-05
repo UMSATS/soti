@@ -112,7 +112,7 @@ class MainScreen(screens.Screen):
                     msg = parser.parse_send(args, self.sender_id)
                     self.device.write(msg)
                 except (ValueError, parser.ArgumentException) as e:
-                    self.console.print(str(e))
+                    self.console.print("Error: " + str(e))
                     return
             case _:
                 self.console.print(f"Unknown command: {parts[0]}")
