@@ -59,7 +59,7 @@ const osThreadAttr_t defaultTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
-CANQueue groundToSatelliteQueue;
+//CANQueue groundToSatelliteQueue;
 uint8_t canRxData[11];
 /* USER CODE END PV */
 
@@ -75,22 +75,14 @@ void StartDefaultTask(void *argument);
 /* USER CODE BEGIN PFP */
 void serializeCANMessage(CANMessage* message, uint8_t* serializedData);
 void deserializeCANMessage(CANMessage* message, const uint8_t* deserializedData);
-void on_message_received(CANMessage msg);
-void on_error_occured(CANWrapper_ErrorInfo error);
+void on_message_received(const CAN_HandleTypeDef*, const CANMessage*);
+void on_error_occured(const CANWrapper_ErrorInfo*);
+void on_rx_callback(const CAN_HandleTypeDef*, const CANMessage*, uint8_t*);
+void on_tx_callback(const CAN_HandleTypeDef*, const CANMessage*);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-CANWrapper_InitTypeDef wc_init = {
-		.node_id = NODE_CDH,
-		.notify_of_acks = true,
-
-		.hcan = &hcan1,
-		.htim = &htim16,
-
-		.message_callback = &on_message_received,
-		.error_callback = &on_error_occured
-};
 /* USER CODE END 0 */
 
 /**
@@ -130,9 +122,8 @@ int main(void)
   LCD_INIT();
   char *str = "WELCOME TO SOTI!";
   LCD_PRINT_STR(str, 0);
-  groundToSatelliteQueue = CANQueue_Create();
+  //groundToSatelliteQueue = CANQueue_Create();
   HAL_UART_Receive_IT(&huart3, canRxData, sizeof(canRxData));
-  CANWrapper_Init(wc_init);
   LEDs_Init();
   /* USER CODE END 2 */
 
@@ -165,6 +156,14 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
+  CANWrapper_InitTypeDef canwrapper_init = {
+  		.message_callback = &on_message_received,
+  		.error_callback = &on_error_occured,
+			.rx_callback = &on_rx_callback,
+			.tx_callback = &on_tx_callback
+  };
+  CANWrapper_CAN_Start(&hcan1);
+  CANWrapper_Init(&canwrapper_init);
   /* USER CODE END RTOS_EVENTS */
 
   /* Start scheduler */
@@ -176,25 +175,25 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-  	CANWrapper_Poll_Messages();
-  	CANWrapper_Poll_Errors();
-
-    if (!CANQueue_IsEmpty(&groundToSatelliteQueue))
-    {
-      //getting message from the queue.
-    	CANQueueItem receivedData;
-      CANQueue_Dequeue(&groundToSatelliteQueue, &receivedData);
-
-      CANMessage message = receivedData.msg;
-
-      //update the sender ID
-      CANWrapper_Set_Node_ID(message.sender);
-
-      NodeID recipient = message.recipient;
-
-      //transferring data over CAN.
-      CANWrapper_Transmit(recipient, &message);
-    }
+//  	CANWrapper_Poll_Messages();
+//  	CANWrapper_Poll_Errors();
+//
+//    if (!CANQueue_IsEmpty(&groundToSatelliteQueue))
+//    {
+//      //getting message from the queue.
+//    	CANQueueItem receivedData;
+//      CANQueue_Dequeue(&groundToSatelliteQueue, &receivedData);
+//
+//      CANMessage message = receivedData.msg;
+//
+//      //update the sender ID
+//      CANWrapper_Set_Node_ID(message.sender);
+//
+//      NodeID recipient = message.recipient;
+//
+//      //transferring data over CAN.
+//      CANWrapper_Transmit(recipient, &message);
+//    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -448,9 +447,9 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void on_message_received(CANMessage msg)
+void on_message_received(const CAN_HandleTypeDef* hcan, const CANMessage* msg)
 {
-	CANMessage message = msg;
+	CANMessage message = *msg;
 	uint8_t serializedData[11];
 
 	//serializing the CANMessage to transfer over UART.
@@ -459,7 +458,7 @@ void on_message_received(CANMessage msg)
 	HAL_UART_Transmit(&huart3, serializedData, sizeof(serializedData), HAL_MAX_DELAY);
 }
 
-void on_error_occured(CANWrapper_ErrorInfo error)
+void on_error_occured(const CANWrapper_ErrorInfo* error)
 {
 	char *str1 = "ERROR:";
 	char *str2 = "CAN RX";
@@ -468,12 +467,22 @@ void on_error_occured(CANWrapper_ErrorInfo error)
 	LCD_PRINT_STR(str2, 16);
 }
 
+void on_rx_callback(const CAN_HandleTypeDef*, const CANMessage*, uint8_t*)
+{
+
+}
+
+void on_tx_callback(const CAN_HandleTypeDef*, const CANMessage*)
+{
+
+}
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	CANMessage message;
   deserializeCANMessage(&message, canRxData);
 
-  CANQueue_Enqueue(&groundToSatelliteQueue, (CANQueueItem){ .msg = message });
+  //CANQueue_Enqueue(&groundToSatelliteQueue, (CANQueueItem){ .msg = message });
 
   HAL_UART_Receive_IT(&huart3, canRxData, sizeof(canRxData));
 }
