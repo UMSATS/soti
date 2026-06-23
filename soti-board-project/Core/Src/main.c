@@ -58,6 +58,11 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for txQueue */
+osMessageQueueId_t txQueueHandle;
+const osMessageQueueAttr_t txQueue_attributes = {
+  .name = "txQueue"
+};
 /* USER CODE BEGIN PV */
 //CANQueue groundToSatelliteQueue;
 uint8_t canRxData[11];
@@ -142,6 +147,10 @@ int main(void)
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
+  /* Create the queue(s) */
+  /* creation of txQueue */
+  txQueueHandle = osMessageQueueNew (16, sizeof(CANMessage), &txQueue_attributes);
+
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
@@ -157,10 +166,10 @@ int main(void)
   /* USER CODE BEGIN RTOS_EVENTS */
   /* add events, ... */
   CANWrapper_InitTypeDef canwrapper_init = {
-  		.message_callback = &on_message_received,
-  		.error_callback = &on_error_occured,
-			.rx_callback = &on_rx_callback,
-			.tx_callback = &on_tx_callback
+    .message_callback = &on_message_received,
+    .error_callback = &on_error_occured,
+    .rx_callback = &on_rx_callback,
+    .tx_callback = &on_tx_callback
   };
   CANWrapper_CAN_Start(&hcan1);
   CANWrapper_Init(&canwrapper_init);
@@ -175,25 +184,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//  	CANWrapper_Poll_Messages();
-//  	CANWrapper_Poll_Errors();
-//
-//    if (!CANQueue_IsEmpty(&groundToSatelliteQueue))
-//    {
-//      //getting message from the queue.
-//    	CANQueueItem receivedData;
-//      CANQueue_Dequeue(&groundToSatelliteQueue, &receivedData);
-//
-//      CANMessage message = receivedData.msg;
-//
-//      //update the sender ID
-//      CANWrapper_Set_Node_ID(message.sender);
-//
-//      NodeID recipient = message.recipient;
-//
-//      //transferring data over CAN.
-//      CANWrapper_Transmit(recipient, &message);
-//    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -449,22 +439,22 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void on_message_received(const CAN_HandleTypeDef* hcan, const CANMessage* msg)
 {
-	CANMessage message = *msg;
-	uint8_t serializedData[11];
+  CANMessage message = *msg;
+  uint8_t serializedData[11];
 
-	//serializing the CANMessage to transfer over UART.
-	serializeCANMessage(&message, serializedData);
-	//transferring data over UART.
-	HAL_UART_Transmit(&huart3, serializedData, sizeof(serializedData), HAL_MAX_DELAY);
+  //serializing the CANMessage to transfer over UART.
+  serializeCANMessage(&message, serializedData);
+  //transferring data over UART.
+  HAL_UART_Transmit(&huart3, serializedData, sizeof(serializedData), HAL_MAX_DELAY);
 }
 
 void on_error_occured(const CANWrapper_ErrorInfo* error)
 {
-	char *str1 = "ERROR:";
-	char *str2 = "CAN RX";
-	LCD_CLEAR_DISPLAY();
-	LCD_PRINT_STR(str1, 0);
-	LCD_PRINT_STR(str2, 16);
+  char *str1 = "ERROR:";
+  char *str2 = "CAN RX";
+  LCD_CLEAR_DISPLAY();
+  LCD_PRINT_STR(str1, 0);
+  LCD_PRINT_STR(str2, 16);
 }
 
 void on_rx_callback(const CAN_HandleTypeDef*, const CANMessage*, uint8_t*)
@@ -479,11 +469,14 @@ void on_tx_callback(const CAN_HandleTypeDef*, const CANMessage*)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	CANMessage message;
+  // Create a CAN message from serial data
+  CANMessage message;
   deserializeCANMessage(&message, canRxData);
 
-  //CANQueue_Enqueue(&groundToSatelliteQueue, (CANQueueItem){ .msg = message });
+  // Add the message to the TX queue
+  osMessageQueuePut(txQueueHandle, &message, 0U, 0U);
 
+  // Arm the UART interrupt
   HAL_UART_Receive_IT(&huart3, canRxData, sizeof(canRxData));
 }
 
@@ -502,14 +495,15 @@ void serializeCANMessage(CANMessage* message, uint8_t* serializedData)
 
 void deserializeCANMessage(CANMessage* message, const uint8_t* deserializedData)
 {
-	message->priority = deserializedData[0];
-	message->sender = deserializedData[1];
-	message->recipient = deserializedData[2];
-	message->cmd = deserializedData[3];
-
+  message->priority = deserializedData[0];
+  message->sender = deserializedData[1];
+  message->recipient = deserializedData[2];
+  message->cmd = deserializedData[3];
+  message->is_ack = false; // TODO: Add ACK support from CLI
+  message->body_size = CMD_CONFIGS[message->cmd].body_size;
   for (int i = 0; i < CAN_MAX_BODY_SIZE; i++)
   {
-  	message->body[i] = deserializedData[4 + i];
+    message->body[i] = deserializedData[4 + i];
   }
 }
 /* USER CODE END 4 */
@@ -524,10 +518,14 @@ void deserializeCANMessage(CANMessage* message, const uint8_t* deserializedData)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
+  CANMessage msg;
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    if (osMessageQueueGet(txQueueHandle, &msg, NULL, osWaitForever) == osOK)
+    {
+      CANWrapper_Transmit_Raw(&hcan1, &msg, true);
+    }
   }
   /* USER CODE END 5 */
 }
