@@ -1,5 +1,5 @@
-[submodule "soti-nucleo-project/Drivers/tsat-utilities-kit"]
-	path = soti-nucleo-project/Drivers/tsat-utilities-kit
+[submodule "soti-nucleo-project/External/tsat-utilities-kit"]
+	path = soti-nucleo-project/External/tsat-utilities-kit
 	url = https://github.com/UMSATS/tsat-utilities-kit
 [submodule "soti-board-project/External/tsat-utilities-kit"]
 	path = soti-board-project/External/tsat-utilities-kit
