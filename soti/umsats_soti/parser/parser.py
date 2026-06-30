@@ -6,65 +6,15 @@ import re
 
 from .message import Message, MAX_BODY_SIZE
 from .constants import NodeID, CmdID
+from .value import Value
 
 
-DATA_ARG_RE = re.compile(r'(?:\((\w+)\))?(\S+)')
+# Regular Expressions
+DATA_ARG_RE = re.compile(r'(?:(\w+)\:)?(\S+)')
 
 
 class ArgumentException(Exception):
     pass
-
-
-def parse_int(s: str) -> int:
-    """
-    Casts numbers and enum members to int.
-    Raises ValueError for invalid values.
-    """
-    is_negative = False
-    if s[0] == '-':
-        is_negative = True
-        s = s[1:]
-
-    i: int = 0
-    if s.isnumeric():
-        i = int(s)
-    elif s[:2] == "0x":
-        i = int(s, 16)
-    elif s[:2] == "0b":
-        i = int(s, 2)
-    elif s in NodeID.__members__:
-        i = NodeID[s].value
-    elif s in CmdID.__members__:
-        i = CmdID[s].value
-    else:
-        raise ValueError(f"'{s}' cannot be parsed as an int")
-
-    if is_negative:
-        i = -i
-
-    return i
-
-
-def get_implied_type(value: int) -> str:
-    """Uses the range of the integer to infer an appropriate type to store the value."""
-    if value < 0:
-        if -(2**7) <= value < 2**7:
-            return "i8"
-        elif -(2**15) <= value < 2**15:
-            return "i16"
-        elif -(2**31) <= value < 2**31:
-            return "i32"
-        else:
-            raise ValueError(f"{value} is out of range for signed 32-bit integer.")
-    else:
-        if 0 <= value < 2**8:
-            return "u8"
-        elif 2**8 <= value < 2**16:
-            return "u16"
-        elif 2**16 <= value < 2**32:
-            return "u32"
-        else:
-            raise ValueError(f"{value} is out of range for unsigned 32-bit integer.")
 
 
 def get_implied_recipient(cmd: CmdID) -> NodeID | None:
@@ -98,9 +48,9 @@ def parse_send(args: str, default_sender: NodeID) -> Message:
     if(len(parts) == 0):
         raise ValueError("No arguments provided")
     try:
-        cmd_id = CmdID(parse_int(parts[0]))
+        cmd_id = CmdID(Value.from_str(parts[0], 'u8').value)
     except ValueError as e:
-        raise ArgumentException(f"Invalid command ID '{parts[0]}'") from e
+        raise ArgumentException(f"Invalid command ID '{parts[0]}': {e}") from e
         
     # Assign default values for the command options.
     priority: int = 255
@@ -118,64 +68,39 @@ def parse_send(args: str, default_sender: NodeID) -> Message:
             if '=' in arg:
                 key, value = arg.split('=')
                 if key == "priority":
-                    priority = parse_int(value)
+                    priority = Value.from_str(value, 'u8').value
                     if not 0 <= priority <= 32:
                         raise ArgumentException(f"Invalid priority '{key}'. Expected range is [0, 32]")
                 elif key == "from":
                     try:
-                        sender_id = NodeID(parse_int(value))
+                        sender_id = NodeID(Value.from_str(value, 'u8').value)
                     except ValueError as exc:
                         raise ArgumentException(f"Invalid node ID '{value}'") from exc
                 elif key == "to":
                     try:
-                        recipient_id = NodeID(parse_int(value))
+                        recipient_id = NodeID(Value.from_str(value, 'u8').value)
                     except ValueError as exc:
                         raise ArgumentException(f"Invalid node ID '{value}'") from exc
                 elif key == "ack":
-                    if value.lower() == "true":
-                        is_ack = True
-                    elif value.lower() == "false":
-                        is_ack = False
-                    else:
-                        raise ArgumentException(f"Invalid value for ack '{value}'. Expected true or false")
+                    try:
+                        is_ack = bool(Value.from_str(value, 'u8').value)
+                    except ValueError as exc:
+                        raise ArgumentException(f"Invalid value for ack '{value}'. Expected true or false") from exc
                 else:
                     raise ArgumentException(f"Unknown option '{key}'")
 
             # treat as data argument
             elif data_index < MAX_BODY_SIZE:
-                data_type = None
-                data_size = 0
-                is_signed = False
-
                 re_match = DATA_ARG_RE.match(arg)
                 if not re_match:
                     raise ArgumentException(f"Invalid syntax for data argument '{arg}'")
 
                 data_type = re_match.group(1)
-                value = parse_int(re_match.group(2))
-
                 if not data_type:
-                    data_type = get_implied_type(value)
+                    raise ArgumentException(f"You must specify a data type for argument '{arg}'")
 
-                if data_type in ["u8", "u16", "u32"]:
-                    is_signed = False
-                elif data_type in ["i8", "i16", "i32"]:
-                    is_signed = True
-
-                if data_type in ["u8", "i8"]:
-                    data_size = 1
-                elif data_type in ["u16", "i16"]:
-                    data_size = 2
-                elif data_type in ["u32", "i32"]:
-                    data_size = 4
-                else:
-                    raise ArgumentException(f"Invalid type '{data_type}'")
-
-                # Convert value to a bytes object.
-                try:
-                    raw_bytes = value.to_bytes(data_size, byteorder="little", signed=is_signed)
-                except OverflowError as exc:
-                    raise ArgumentException(f"Integer overflow. '{re_match.group(2)}' cannot be represented as {data_type}") from exc
+                value = Value.from_str(re_match.group(2), data_type)
+                raw_bytes = value.to_bytes()
 
                 # Add the bytes of data.
                 data.extend(raw_bytes)
