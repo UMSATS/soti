@@ -20,7 +20,6 @@ SESSION_FILE_FORMAT = "%Y-%m-%d_%H%M%S"
 PALETTE = [
     ('soti banner', 'default', 'default'),
     ('soti title', 'yellow,italics', 'default'),
-    ('title', 'white,bold', 'default'),
     ('button', 'white', 'default'),
     ('button focus', 'white,bold', 'dark blue'),
     ('accent', 'yellow,bold', 'default'),
@@ -28,7 +27,8 @@ PALETTE = [
     ('cli prompt', 'default', 'dark gray'),
     ('cli prompt prefix', 'standout', 'default'),
     ('table header', 'white', 'dark blue'),
-    ('table cell', 'default', 'default')
+    ('table cell', 'default', 'default'),
+    ('panel focus', 'light blue', 'default')
 ]
 
 # Define icons here.

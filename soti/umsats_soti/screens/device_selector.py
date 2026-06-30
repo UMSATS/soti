@@ -42,7 +42,6 @@ class DeviceSelector(screens.Screen):
         menu = urwid.Padding(urwid.LineBox(
             urwid.ListBox(self.menu_items),
             title="Select Input Device",
-            title_attr='title',
             title_align='center',
             tlcorner=urwid.LineBox.Symbols.LIGHT.TOP_LEFT_ROUNDED,
             trcorner=urwid.LineBox.Symbols.LIGHT.TOP_RIGHT_ROUNDED,

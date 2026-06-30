@@ -52,27 +52,25 @@ class MainScreen(screens.Screen):
         self.console = Console(('cli prompt prefix', " >> "), output=INTRO_TEXT)
         self.console.submit.connect(self._on_command_entered)
 
-        top_panel = urwid.LineBox(
+        top_panel = urwid.AttrMap(urwid.LineBox(
             self.table,
             title="Bus Traffic",
             title_align='left',
-            title_attr='title',
             tlcorner=urwid.LineBox.Symbols.LIGHT.TOP_LEFT_ROUNDED,
             trcorner=urwid.LineBox.Symbols.LIGHT.TOP_RIGHT_ROUNDED,
             blcorner=urwid.LineBox.Symbols.LIGHT.BOTTOM_LEFT_ROUNDED,
             brcorner=urwid.LineBox.Symbols.LIGHT.BOTTOM_RIGHT_ROUNDED
-        )
+        ), '', 'panel focus')
 
-        bottom_panel = urwid.LineBox(
+        bottom_panel = urwid.AttrMap(urwid.LineBox(
             self.console,
             title="CLI",
             title_align='left',
-            title_attr='title',
             tlcorner=urwid.LineBox.Symbols.LIGHT.TOP_LEFT_ROUNDED,
             trcorner=urwid.LineBox.Symbols.LIGHT.TOP_RIGHT_ROUNDED,
             blcorner=urwid.LineBox.Symbols.LIGHT.BOTTOM_LEFT_ROUNDED,
             brcorner=urwid.LineBox.Symbols.LIGHT.BOTTOM_RIGHT_ROUNDED
-        )
+        ), '', 'panel focus')
 
         command_list_markup = ["Commands: "]
         for i, cmd in enumerate(COMMAND_LIST):

@@ -63,7 +63,7 @@ class Console(urwid.WidgetWrap):
             urwid.Filler(
                     urwid.Pile(
                     [
-                        ('pack', self.output),
+                        ('pack', urwid.AttrMap(self.output, '', '')),
                         ('pack', urwid.AttrMap(self.edit, 'cli prompt'))
                     ]
                 ),
