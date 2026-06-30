@@ -28,6 +28,8 @@ class App():
     def run(self):
         try:
             self.loop.run()
+        except KeyboardInterrupt:
+            pass
         finally:
             self.current_screen.on_exit(self.loop)
 

@@ -56,23 +56,28 @@ class SerialDevice(Device):
             print(f"[SerialDevice: {self.port}] Failed to open serial port: {e}")
             return
 
-        while True:
-            try:
-                msg = self._write_queue.get_nowait()
-                if msg is None: # Check for termination sentinel
-                    break  # Exit process
-                ser.write(msg.serialize())
-            except queue.Empty:
-                pass
-
-            # Read if bytes are available
-            if ser.in_waiting >= MSG_SIZE:
-                data = ser.read(MSG_SIZE)
+        try:
+            while True:
                 try:
-                    msg = Message.deserialize(data)
-                    self._read_queue.put(msg)
-                except Exception as e:
-                    print(f"[SerialDevice: {self.port}] Deserialization error: {e}")
+                    msg = self._write_queue.get_nowait()
+                    if msg is None: # Check for termination sentinel
+                        break  # Exit process
+                    ser.write(msg.serialize())
+                except queue.Empty:
+                    pass
+
+                # Read if bytes are available
+                if ser.in_waiting >= MSG_SIZE:
+                    data = ser.read(MSG_SIZE)
+                    try:
+                        msg = Message.deserialize(data)
+                        self._read_queue.put(msg)
+                    except KeyboardInterrupt:
+                        raise
+                    except Exception as e:
+                        print(f"[SerialDevice: {self.port}] Deserialization error: {e}")
+        except KeyboardInterrupt:
+            pass
 
         ser.close()
 
@@ -81,11 +86,14 @@ class VirtualDevice(Device):
     """For when no device is selected."""
     def _run(self):
         # Echo messages back to the user.
-        while True:
-            try:
-                msg = self._write_queue.get_nowait()
-                if msg is None: # Check for termination sentinel
-                    break  # Exit process
-                self._read_queue.put(msg)
-            except queue.Empty:
-                pass
+        try:
+            while True:
+                try:
+                    msg = self._write_queue.get_nowait()
+                    if msg is None: # Check for termination sentinel
+                        break  # Exit process
+                    self._read_queue.put(msg)
+                except queue.Empty:
+                    pass
+        except KeyboardInterrupt:
+            pass
