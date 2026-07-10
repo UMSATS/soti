@@ -13,7 +13,7 @@ SESSIONS_DIR = SAVE_DATA_DIR / "sessions"
 SESSION_FILE_FORMAT = "%Y-%m-%d_%H%M%S"
 
 # The length of a serialized message in bytes.
-MSG_SIZE = 11
+MSG_SIZE = 12
 # The length of a message's data payload in bytes.
 DATA_SIZE = 7
 

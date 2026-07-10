@@ -88,7 +88,7 @@ def parse_send(args: str, default_sender: NodeID) -> Message:
     priority: int = COMM_INFO[cmd_id]["priority"]
     sender_id: NodeID = default_sender
     recipient_id: NodeID | None = COMM_INFO[cmd_id]["dest"]
-    is_ack = False
+    is_ack = 0
 
     # represents the bytes that will be sent in the data section of the message
     data = bytearray()

@@ -9,7 +9,7 @@ class Message:
     priority: int
     sender: NodeID
     recipient: NodeID
-    is_ack: bool
+    is_ack: int
     cmd_id: CmdID
     body: bytes = field(default_factory=([0] * 7))
     # additional parameters

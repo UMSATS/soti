@@ -65,7 +65,7 @@ const osMessageQueueAttr_t txQueue_attributes = {
 };
 /* USER CODE BEGIN PV */
 //CANQueue groundToSatelliteQueue;
-uint8_t canRxData[11];
+uint8_t canRxData[12];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -440,7 +440,7 @@ static void MX_GPIO_Init(void)
 void on_message_received(const CAN_HandleTypeDef* hcan, const CANMessage* msg)
 {
   CANMessage message = *msg;
-  uint8_t serializedData[11];
+  uint8_t serializedData[12];
 
   //serializing the CANMessage to transfer over UART.
   serializeCANMessage(&message, serializedData);
@@ -485,11 +485,12 @@ void serializeCANMessage(CANMessage* message, uint8_t* serializedData)
   serializedData[0] = message->priority;
   serializedData[1] = message->sender;
   serializedData[2] = message->recipient;
-  serializedData[3] = message->cmd;
+  serializedData[3] = message->is_ack;
+  serializedData[4] = message->cmd;
 
   for (int i = 0; i < CAN_MAX_BODY_SIZE; i++)
   {
-    serializedData[4 + i] = message->body[i];
+    serializedData[5 + i] = message->body[i];
   }
 }
 
@@ -498,12 +499,12 @@ void deserializeCANMessage(CANMessage* message, const uint8_t* deserializedData)
   message->priority = deserializedData[0];
   message->sender = deserializedData[1];
   message->recipient = deserializedData[2];
-  message->cmd = deserializedData[3];
-  message->is_ack = false; // TODO: Add ACK support from CLI
+  message->is_ack = deserializedData[3];
+  message->cmd = deserializedData[4];
   message->body_size = CMD_CONFIGS[message->cmd].body_size;
   for (int i = 0; i < CAN_MAX_BODY_SIZE; i++)
   {
-    message->body[i] = deserializedData[4 + i];
+    message->body[i] = deserializedData[5 + i];
   }
 }
 /* USER CODE END 4 */

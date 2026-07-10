@@ -22,6 +22,8 @@ import shlex
 enable_printing = threading.Event()
 enable_printing.set()
 
+do_exit = False
+
 # ----------------------------------------------------------
 # CMD CLASS
 # ----------------------------------------------------------
@@ -104,7 +106,8 @@ class SOTI:
 
     def do_exit(self, _):
         """Exits the CLI."""
-        return True
+        global do_exit
+        do_exit = True
 
     def do(self, line):
         try:
@@ -230,7 +233,7 @@ if __name__ == "__main__":
         session = PromptSession()
 
         with patch_stdout():
-            while True:
+            while not do_exit:
                 line = session.prompt("> ")
 
                 if not line.strip():
