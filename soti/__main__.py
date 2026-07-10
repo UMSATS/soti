@@ -3,6 +3,7 @@ The main soti front-end script which initializes the terminal and listener threa
 """
 
 import multiprocessing
+import threading
 import cmd
 import serial.tools.list_ports
 import serial.tools.list_ports_common
@@ -12,35 +13,56 @@ from utils.constants import CmdID, NodeID
 
 from serial_reader import serial_reader
 from session_logger import log_messages, dict_to_yaml
-from message import Message
 import parser
 
+from prompt_toolkit import PromptSession
+from prompt_toolkit.patch_stdout import patch_stdout
+import shlex
+
+enable_printing = threading.Event()
+enable_printing.set()
 
 # ----------------------------------------------------------
 # CMD CLASS
 # ----------------------------------------------------------
 
-class CommandLine(cmd.Cmd):
-    """Represents the command line interface."""
-    # initialize the object
-    def __init__(self, out_queue, write_queue):
-        super().__init__()
-        self.intro = "\nAvailable commands:\nsend\niamnow\nhelp\nlist\nexit\n"
-        self.prompt = ">> "
-        self.out_msg_queue = out_queue
-        self.write_msg_queue = write_queue
-        self.sender_id = NodeID.CDH
+# class CommandLine(cmd.Cmd):
+#     """Represents the command line interface."""
+#     # initialize the object
+#     def __init__(self, out_queue, write_queue):
+#         super().__init__()
+#         self.intro = "\nAvailable commands:\nsend\niamnow\nhelp\nlist\nexit\n"
+#         self.prompt = ">> "
+#         self.out_msg_queue = out_queue
+#         self.write_msg_queue = write_queue
+#         self.sender_id = NodeID.CDH
 
+class SOTI:
+    def __init__(self, write_queue, out_queue):
+        self.write_msg_queue = write_queue
+        self.out_msg_queue = out_queue
+        self.sender_id = NodeID.CDH
+        self.commands = {
+            "send": self.do_send,
+            "iamnow": self.do_iamnow,
+            "help": self.do_help,
+            "list": self.do_list,
+            "exit": self.do_exit,
+        }
+        print("\nAvailable commands:\nsend\niamnow\nhelp\nlist\nexit\n")
 
     def do_send(self, arg):
         """Sends a command."""
+        global enable_printing
         try:
+            enable_printing.clear()
+
             msg = parser.parse_send(arg, self.sender_id)
 
             msg_yaml = dict_to_yaml(msg.as_dict(), 1, True)
-            print(f"Preparing to send message:\n{msg_yaml}")
+            print(f"\nPreparing to send message:\n{msg_yaml}")
 
-            match input("Send this message? (Y/N) ").lower():
+            match session.prompt("Send this message? (Y/N) ").lower():
                 case "y":
                     # send the message to be written to the serial device and logged
                     self.write_msg_queue.put(msg)
@@ -50,8 +72,10 @@ class CommandLine(cmd.Cmd):
 
         except (ValueError, parser.ArgumentException) as e:
             print(e)
-            return
-
+        
+        finally:
+            print()
+            enable_printing.set()
 
     def do_iamnow(self, arg):
         """Changes the default sender ID."""
@@ -65,7 +89,6 @@ class CommandLine(cmd.Cmd):
         except ValueError:
             print("Invalid args.")
 
-
     def do_help(self, arg):
         """Displays help messages."""
         if arg == "send":
@@ -75,15 +98,40 @@ class CommandLine(cmd.Cmd):
         else:
             print(help_strings.HELP_MESSAGE)
 
-
     def do_list(self, _):
         """Lists the available CAN commands."""
         print(help_strings.COMMAND_LIST)
 
-
     def do_exit(self, _):
         """Exits the CLI."""
         return True
+
+    def do(self, line):
+        try:
+            parts = shlex.split(line)
+            if not parts:
+                return
+        except ValueError as e:
+            print(e)
+            return
+
+        command = parts[0]
+        arg = " ".join(parts[1:])
+
+        func = self.commands.get(command)
+
+        if func is None:
+            print(f"Unknown command: {command}")
+            return
+
+        func(arg)
+
+
+def print_messages(print_queue):
+    while True:
+        msg = print_queue.get()
+        enable_printing.wait()
+        print(msg, flush=True)
 
 
 # ----------------------------------------------------------
@@ -131,6 +179,7 @@ if __name__ == "__main__":
         multiprocessing.set_start_method('spawn')
         write_msg_queue = multiprocessing.Queue() # messages to be written to file
         out_msg_queue = multiprocessing.Queue() # messages to send to SOTI board
+        print_queue = multiprocessing.Queue() # messages to be printed to CLI
 
         # thread-safe flags to tell the processes to stop.
         stop_serial_reader_flag = multiprocessing.Event()
@@ -156,6 +205,7 @@ if __name__ == "__main__":
             target=log_messages,
             args=(
                 write_msg_queue,
+                print_queue,
                 stop_session_logger_flag,
                 selected_port.device
             ),
@@ -166,7 +216,27 @@ if __name__ == "__main__":
         for p in processes:
             p.start()
 
-        CommandLine(out_msg_queue, write_msg_queue).cmdloop()
+        # create the printing thread
+        threading.Thread(
+            target=print_messages,
+            args=(print_queue,),
+            daemon=True,
+        ).start()
+
+        #CommandLine(out_msg_queue, write_msg_queue).cmdloop()
+
+        cli = SOTI(write_msg_queue, out_msg_queue)
+
+        session = PromptSession()
+
+        with patch_stdout():
+            while True:
+                line = session.prompt("> ")
+
+                if not line.strip():
+                    continue
+
+                cli.do(line)
 
     except KeyboardInterrupt:
         pass

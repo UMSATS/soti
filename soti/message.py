@@ -9,6 +9,7 @@ class Message:
     priority: int
     sender: NodeID
     recipient: NodeID
+    is_ack: bool
     cmd_id: CmdID
     body: bytes = field(default_factory=([0] * 7))
     # additional parameters
@@ -31,10 +32,11 @@ class Message:
         priority = msg_bytes[0]
         sender = NodeID(msg_bytes[1])
         recipient = NodeID(msg_bytes[2])
-        cmd_id = CmdID(msg_bytes[3])
-        body = msg_bytes[4:]
+        is_ack = msg_bytes[3]
+        cmd_id = CmdID(msg_bytes[4])
+        body = msg_bytes[5:]
 
-        return cls(priority, sender, recipient, cmd_id, body)
+        return cls(priority, sender, recipient, is_ack, cmd_id, body)
 
     def serialize(self) -> bytes:
         """Return the serialized bytes of the message."""
@@ -42,6 +44,7 @@ class Message:
             self.priority,
             self.sender.value,
             self.recipient.value,
+            self.is_ack,
             self.cmd_id.value])
             + self.body
         )
@@ -55,6 +58,7 @@ class Message:
             "priority": self.priority,
             "sender-id": self.sender,
             "recipient-id": self.recipient,
+            "is_ack": self.is_ack,
             "cmd": self.cmd_id,
             "body": parse_msg_body(self.cmd_id, self.body)
         }

@@ -7,6 +7,7 @@ import struct
 from queue import Empty
 from enum import Enum
 from utils.constants import NodeID, CmdID, SAVE_DATA_DIR, SESSIONS_DIR, SESSION_FILE_FORMAT
+from utils.formatting import format_message
 
 
 def datetime_to_filename(time: datetime):
@@ -43,7 +44,7 @@ def save_log(filename: str, start_time: datetime, end_time: datetime, port, msg_
         history.write(log_yaml)
 
 
-def log_messages(write_msg_queue, stop_flag, port):
+def log_messages(write_msg_queue, print_queue, stop_flag, port):
     """Writes messages from the queue to the output file."""
     start_time = datetime.datetime.now()
     msg_log = ""
@@ -53,10 +54,11 @@ def log_messages(write_msg_queue, stop_flag, port):
             try:
                 new_msg = write_msg_queue.get(block=False)
 
-                new_msg_dict = new_msg.as_dict()
                 if new_msg.source == "port":
-                    print(f"Message Parsed: {new_msg_dict}")
+                    print_queue.put(format_message(new_msg))
 
+                new_msg_dict = new_msg.as_dict()
+                
                 # append the new message
                 msg_log += dict_to_yaml(new_msg_dict, 1, True) + "\n"
 

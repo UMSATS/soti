@@ -17,7 +17,10 @@ def serial_reader(write_msg_queue, out_msg_queue, stop_flag, port):
                     # block and read indefinitely, reading messages 11 bytes at a time
                     new_msg_bytes = ser.read(MSG_SIZE)
                     new_msg_hex = new_msg_bytes.hex()
-                    print(f"New Message: 0x{new_msg_hex}")
+
+                    # DEBUG pring
+                    #print(f"New Message: 0x{new_msg_hex}")
+                    
                     new_msg = Message.deserialize(new_msg_bytes)
                     new_msg.source = "port"
                     write_msg_queue.put(new_msg)
@@ -28,7 +31,9 @@ def serial_reader(write_msg_queue, out_msg_queue, stop_flag, port):
 
                     out_msg_cmd = out_msg.as_dict()["cmd"].name
                     out_msg_recipient = out_msg.as_dict()["recipient-id"].get_display_name()
-                    print(f"Sending '{out_msg_cmd}' to {out_msg_recipient}.")
+
+                    # DEBUG print
+                    #print(f"Sending '{out_msg_cmd}' to {out_msg_recipient}.")
 
                     # write the message to the serial device
                     ser.write(out_msg.serialize())

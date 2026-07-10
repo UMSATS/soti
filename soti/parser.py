@@ -88,6 +88,7 @@ def parse_send(args: str, default_sender: NodeID) -> Message:
     priority: int = COMM_INFO[cmd_id]["priority"]
     sender_id: NodeID = default_sender
     recipient_id: NodeID | None = COMM_INFO[cmd_id]["dest"]
+    is_ack = False
 
     # represents the bytes that will be sent in the data section of the message
     data = bytearray()
@@ -160,4 +161,4 @@ def parse_send(args: str, default_sender: NodeID) -> Message:
     if recipient_id is None:
         raise ArgumentException(f"You must specify a recipient with the 'to' option for {cmd_id.name}")
 
-    return Message(priority, sender_id, recipient_id, cmd_id, bytes(data), source="user")
+    return Message(priority, sender_id, recipient_id, is_ack, cmd_id, bytes(data), source="user")
