@@ -75,6 +75,8 @@ class CmdID(Enum):
     ## Tests
     CDH_TEST_FLASH                  = auto()
     CDH_TEST_MRAM                   = auto()
+    CDH_TEST_DHARA                  = auto()
+    CDH_TEST_STORAGEMANAGER         = auto()
 
     CDH_RESET_SUBSYSTEM             = auto()
 
@@ -145,6 +147,8 @@ COMM_INFO = {
     ## Tests
     CmdID.CDH_TEST_FLASH:                  {"priority": 32, "dest": NodeID.CDH},
     CmdID.CDH_TEST_MRAM:                   {"priority": 32, "dest": NodeID.CDH},
+    CmdID.CDH_TEST_DHARA:                  {"priority": 32, "dest": NodeID.CDH},
+    CmdID.CDH_TEST_STORAGEMANAGER:         {"priority": 32, "dest": NodeID.CDH},
 
     CmdID.CDH_RESET_SUBSYSTEM:             {"priority": 32, "dest": NodeID.CDH},
 
