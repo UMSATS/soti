@@ -18,11 +18,11 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "tuk/can_wrapper.h"
-#include "tuk/can_wrapper/can_queue.h"
+#include "tuk/tuk.h"
 #include "LEDs_driver.h"
 #include "LCD_C0216CiZ_driver.h"
 /* USER CODE END Includes */
@@ -51,9 +51,21 @@ TIM_HandleTypeDef htim16;
 
 UART_HandleTypeDef huart3;
 
+/* Definitions for defaultTask */
+osThreadId_t defaultTaskHandle;
+const osThreadAttr_t defaultTask_attributes = {
+  .name = "defaultTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for txQueue */
+osMessageQueueId_t txQueueHandle;
+const osMessageQueueAttr_t txQueue_attributes = {
+  .name = "txQueue"
+};
 /* USER CODE BEGIN PV */
-CANQueue groundToSatelliteQueue;
-uint8_t canRxData[11];
+//CANQueue groundToSatelliteQueue;
+uint8_t canRxData[13];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -63,25 +75,22 @@ static void MX_CAN1_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_I2C3_Init(void);
 static void MX_TIM16_Init(void);
+void StartDefaultTask(void *argument);
+
 /* USER CODE BEGIN PFP */
-void serializeCANMessage(CANMessage* message, uint8_t* serializedData);
-void deserializeCANMessage(CANMessage* message, const uint8_t* deserializedData);
-void on_message_received(CANMessage msg);
-void on_error_occured(CANWrapper_ErrorInfo error);
+//void serializeCANMessage(CANMessage* message, uint8_t* serializedData);
+//void deserializeCANMessage(CANMessage* message, const uint8_t* deserializedData);
+void Serialize_CAN_Message(uint8_t* out_buffer, const CANMessage* in_msg);
+void Deserialize_CAN_Message(CANMessage* out_msg, const uint8_t* in_buffer);
+
+void on_message_received(const CAN_HandleTypeDef*, const CANMessage*);
+void on_error_occured(const CANWrapper_ErrorInfo*);
+void on_rx_callback(const CAN_HandleTypeDef*, const CANMessage*, uint8_t*);
+void on_tx_callback(const CAN_HandleTypeDef*, const CANMessage*);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-CANWrapper_InitTypeDef wc_init = {
-		.node_id = NODE_CDH,
-		.notify_of_acks = true,
-
-		.hcan = &hcan1,
-		.htim = &htim16,
-
-		.message_callback = &on_message_received,
-		.error_callback = &on_error_occured
-};
 /* USER CODE END 0 */
 
 /**
@@ -121,35 +130,63 @@ int main(void)
   LCD_INIT();
   char *str = "WELCOME TO SOTI!";
   LCD_PRINT_STR(str, 0);
-  CANQueue groundToSatelliteQueue = CANQueue_Create();
+  //groundToSatelliteQueue = CANQueue_Create();
   HAL_UART_Receive_IT(&huart3, canRxData, sizeof(canRxData));
-  CANWrapper_Init(wc_init);
   LEDs_Init();
   /* USER CODE END 2 */
+
+  /* Init scheduler */
+  osKernelInitialize();
+
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* Create the queue(s) */
+  /* creation of txQueue */
+  txQueueHandle = osMessageQueueNew (16, sizeof(CANMessage), &txQueue_attributes);
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* creation of defaultTask */
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+
+  /* USER CODE BEGIN RTOS_EVENTS */
+  /* add events, ... */
+  CANWrapper_InitTypeDef canwrapper_init = {
+    .message_callback = &on_message_received,
+    .error_callback = &on_error_occured,
+    .rx_callback = &on_rx_callback,
+    .tx_callback = &on_tx_callback
+  };
+  CANWrapper_CAN_Start(&hcan1);
+  CANWrapper_Init(&canwrapper_init);
+  /* USER CODE END RTOS_EVENTS */
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-  	CANWrapper_Poll_Messages();
-  	CANWrapper_Poll_Errors();
-
-    if (!CANQueue_IsEmpty(&groundToSatelliteQueue))
-    {
-      //getting message from the queue.
-    	CANQueueItem receivedData;
-      CANQueue_Dequeue(&groundToSatelliteQueue, &receivedData);
-
-      CANMessage message = receivedData.msg;
-
-      //update the sender ID
-      CANWrapper_Set_Node_ID(message.sender);
-
-      NodeID recipient = message.recipient;
-
-      //transferring data over CAN.
-      CANWrapper_Transmit(recipient, &message);
-    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -403,62 +440,129 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void on_message_received(CANMessage msg)
+void on_message_received(const CAN_HandleTypeDef* hcan, const CANMessage* msg)
 {
-	CANMessage message = msg;
-	uint8_t serializedData[11];
+  CANMessage message = *msg;
+  uint8_t serializedData[13];
 
-	//serializing the CANMessage to transfer over UART.
-	serializeCANMessage(&message, serializedData);
-	//transferring data over UART.
-	HAL_UART_Transmit(&huart3, serializedData, sizeof(serializedData), HAL_MAX_DELAY);
+  //serializing the CANMessage to transfer over UART.
+  //serializeCANMessage(&message, serializedData);
+  Serialize_CAN_Message(serializedData, &message);
+  //transferring data over UART.
+  HAL_UART_Transmit(&huart3, serializedData, sizeof(serializedData), HAL_MAX_DELAY);
 }
 
-void on_error_occured(CANWrapper_ErrorInfo error)
+void on_error_occured(const CANWrapper_ErrorInfo* error)
 {
-	char *str1 = "ERROR:";
-	char *str2 = "CAN RX";
-	LCD_CLEAR_DISPLAY();
-	LCD_PRINT_STR(str1, 0);
-	LCD_PRINT_STR(str2, 16);
+  char *str1 = "ERROR:";
+  char *str2 = "CAN RX";
+  LCD_CLEAR_DISPLAY();
+  LCD_PRINT_STR(str1, 0);
+  LCD_PRINT_STR(str2, 16);
+}
+
+void on_rx_callback(const CAN_HandleTypeDef*, const CANMessage*, uint8_t*)
+{
+
+}
+
+void on_tx_callback(const CAN_HandleTypeDef*, const CANMessage*)
+{
+
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	CANMessage message;
-  deserializeCANMessage(&message, canRxData);
+  // Create a CAN message from serial data
+  CANMessage message;
+  Deserialize_CAN_Message(&message, canRxData);
+  //deserializeCANMessage(&message, canRxData);
 
-  CANQueue_Enqueue(&groundToSatelliteQueue, (CANQueueItem){ .msg = message });
+  // Add the message to the TX queue
+  osMessageQueuePut(txQueueHandle, &message, 0U, 0U);
 
+  // Arm the UART interrupt
   HAL_UART_Receive_IT(&huart3, canRxData, sizeof(canRxData));
 }
 
+void Serialize_CAN_Message(uint8_t* out_buffer, const CANMessage* in_msg)
+{
+	memcpy(out_buffer, in_msg, sizeof(CANMessage));
+}
+/*
 void serializeCANMessage(CANMessage* message, uint8_t* serializedData)
 {
   serializedData[0] = message->priority;
   serializedData[1] = message->sender;
   serializedData[2] = message->recipient;
-  serializedData[3] = message->cmd;
+  serializedData[3] = message->is_ack;
+  serializedData[4] = message->cmd;
 
   for (int i = 0; i < CAN_MAX_BODY_SIZE; i++)
   {
-    serializedData[4 + i] = message->body[i];
+    serializedData[5 + i] = message->body[i];
   }
 }
+*/
 
+/**
+ * Deserializes bytes into a CAN message.
+ *
+ * @param out_msg Message for storing result.
+ * @param in_buffer Bytes to deserialize.
+ */
+void Deserialize_CAN_Message(CANMessage* out_msg, const uint8_t* in_buffer)
+{
+	memcpy(out_msg, in_buffer, sizeof(CANMessage));
+
+	// Check for inferred fields.
+	if (out_msg->body_size == 255)
+	{
+		out_msg->body_size = CMD_CONFIGS[out_msg->cmd].body_size;
+	}
+	if (out_msg->priority == 255)
+	{
+		out_msg->priority = CMD_CONFIGS[out_msg->cmd].priority;
+	}
+}
+/*
 void deserializeCANMessage(CANMessage* message, const uint8_t* deserializedData)
 {
-	message->priority = deserializedData[0];
-	message->sender = deserializedData[1];
-	message->recipient = deserializedData[2];
-	message->cmd = deserializedData[3];
-
+  message->priority = deserializedData[0];
+  message->sender = deserializedData[1];
+  message->recipient = deserializedData[2];
+  message->is_ack = deserializedData[3];
+  message->cmd = deserializedData[4];
+  message->body_size = CMD_CONFIGS[message->cmd].body_size;
   for (int i = 0; i < CAN_MAX_BODY_SIZE; i++)
   {
-  	message->body[i] = deserializedData[4 + i];
+    message->body[i] = deserializedData[5 + i];
   }
 }
+*/
 /* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_StartDefaultTask */
+/**
+  * @brief  Function implementing the defaultTask thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_StartDefaultTask */
+void StartDefaultTask(void *argument)
+{
+  /* USER CODE BEGIN 5 */
+  CANMessage msg;
+  /* Infinite loop */
+  for(;;)
+  {
+    if (osMessageQueueGet(txQueueHandle, &msg, NULL, osWaitForever) == osOK)
+    {
+      CANWrapper_Transmit_Raw(&hcan1, &msg, true);
+    }
+  }
+  /* USER CODE END 5 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
